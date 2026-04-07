@@ -116,7 +116,7 @@ Section "Install"
     ${While} $CleanupFile != ""
         Delete "$PROFILE\Downloads\$CleanupFile"
         FindNext $CleanupHandle $CleanupFile
-    ${Wend}
+    ${EndWhile}
     FindClose $CleanupHandle
 SectionEnd
 

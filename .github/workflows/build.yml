@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: blacksmith-4vcpu-windows-2025
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -37,5 +37,8 @@ jobs:
         working-directory: frontend
         run: pnpm install
 
-      - name: Build
-        run: wails build
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Build NSIS installer (dry run — no upload)
+        run: wails build -nsis -ldflags "-X main.Version=0.0.0-ci"
