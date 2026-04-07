@@ -1,12 +1,25 @@
 package updater
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"syscall"
 
 	"github.com/blang/semver"
-	"github.com/rhysd/go-github-selfupdate/selfupdate"
 )
+
+// Release holds the information about a GitHub release.
+type Release struct {
+	Version string
+	URL     string
+	Notes   string
+}
 
 type Updater struct {
 	repo string
@@ -16,35 +29,115 @@ func New(repo string) *Updater {
 	return &Updater{repo: repo}
 }
 
-func (u *Updater) CheckForUpdates(currentVersion string) (*selfupdate.Release, bool, error) {
-	v, err := semver.Parse(currentVersion)
+type ghRelease struct {
+	TagName string    `json:"tag_name"`
+	Body    string    `json:"body"`
+	Assets  []ghAsset `json:"assets"`
+}
+
+type ghAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
+// CheckForUpdates fetches all releases from GitHub and returns the newest one
+// whose version is greater than currentVersion (pre-releases included).
+func (u *Updater) CheckForUpdates(currentVersion string) (*Release, bool, error) {
+	cur, err := parseTolerant(currentVersion)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse current version: %w", err)
+		return nil, false, fmt.Errorf("failed to parse current version %q: %w", currentVersion, err)
 	}
 
-	latest, found, err := selfupdate.DetectLatest(u.repo)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases", u.repo)
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "blight-updater")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, false, fmt.Errorf("check for updates failed: %w", err)
+		return nil, false, fmt.Errorf("github api request failed: %w", err)
 	}
-	if !found {
-		return nil, false, nil // No release found
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, false, fmt.Errorf("github api returned status %d", resp.StatusCode)
 	}
 
-	if latest.Version.GT(v) {
-		return latest, true, nil
+	var releases []ghRelease
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return nil, false, fmt.Errorf("failed to decode releases: %w", err)
 	}
+
+	for _, rel := range releases {
+		tag := strings.TrimPrefix(rel.TagName, "v")
+		v, err := parseTolerant(tag)
+		if err != nil {
+			continue
+		}
+		if !v.GT(cur) {
+			continue
+		}
+		// Find a setup.exe asset
+		for _, asset := range rel.Assets {
+			name := strings.ToLower(asset.Name)
+			if strings.Contains(name, "setup") && strings.HasSuffix(name, ".exe") {
+				return &Release{
+					Version: tag,
+					URL:     asset.BrowserDownloadURL,
+					Notes:   rel.Body,
+				}, true, nil
+			}
+		}
+	}
+
 	return nil, false, nil
 }
 
-// ApplyUpdate downloads and applies the update from the given release.
-func (u *Updater) ApplyUpdate(release *selfupdate.Release) error {
-	exe, err := os.Executable()
+// ApplyUpdate downloads the setup.exe installer and runs it silently.
+// The NSIS installer takes over from here — it will kill the running process
+// and restart it after installation.
+func (u *Updater) ApplyUpdate(release *Release) error {
+	tmp, err := os.MkdirTemp("", "blight-update-*")
 	if err != nil {
-		return fmt.Errorf("could not locate executable path: %w", err)
+		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
 
-	if err := selfupdate.UpdateTo(release.AssetURL, exe); err != nil {
-		return fmt.Errorf("error occurred while updating binary: %w", err)
+	dest := filepath.Join(tmp, "blight-setup.exe")
+
+	resp, err := http.Get(release.URL)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
 	}
-	return nil
+	defer resp.Body.Close()
+
+	f, err := os.Create(dest)
+	if err != nil {
+		return fmt.Errorf("failed to create installer file: %w", err)
+	}
+	_, copyErr := io.Copy(f, resp.Body)
+	f.Close()
+	if copyErr != nil {
+		return fmt.Errorf("download write failed: %w", copyErr)
+	}
+
+	// Run the NSIS installer silently; /S = silent, no UI
+	cmd := exec.Command(dest, "/S")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	return cmd.Start()
+}
+
+// parseTolerant parses a version string, stripping pre-release labels if needed.
+func parseTolerant(v string) (semver.Version, error) {
+	parsed, err := semver.ParseTolerant(v)
+	if err == nil {
+		return parsed, nil
+	}
+	// Strip pre-release suffix (e.g. "0.2.4-alpha" → "0.2.4")
+	if idx := strings.IndexByte(v, '-'); idx != -1 {
+		parsed, err2 := semver.ParseTolerant(v[:idx])
+		if err2 == nil {
+			return parsed, nil
+		}
+	}
+	return semver.Version{}, err
 }

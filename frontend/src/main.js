@@ -207,7 +207,11 @@ class Blight {
         }
 
         // Click outside the window → hide
+        // Guard against the blur that fires immediately after WindowShow (Alt+Space race).
+        this.lastFocusAt = 0;
+        window.addEventListener('focus', () => { this.lastFocusAt = Date.now(); });
         window.addEventListener('blur', () => {
+            if (Date.now() - this.lastFocusAt < 600) return; // window just gained focus — ignore
             if (this.settingsPanelEl.classList.contains('hidden')) {
                 HideWindow();
             }

@@ -108,6 +108,16 @@ Section "Install"
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+
+    ; Clean up old direct-download binaries from the user's Downloads folder
+    Var /GLOBAL CleanupHandle
+    Var /GLOBAL CleanupFile
+    FindFirst $CleanupHandle $CleanupFile "$PROFILE\Downloads\blight-windows-amd64*.exe"
+    ${While} $CleanupFile != ""
+        Delete "$PROFILE\Downloads\$CleanupFile"
+        FindNext $CleanupHandle $CleanupFile
+    ${Wend}
+    FindClose $CleanupHandle
 SectionEnd
 
 Section "Uninstall"

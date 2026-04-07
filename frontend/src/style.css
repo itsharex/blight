@@ -357,10 +357,10 @@ body {
 /* === Notification Toast (left side) === */
 
 .toast {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateX(-30px) translateY(-50%);
+    position: fixed;
+    left: 16px;
+    bottom: 18px;
+    transform: translateX(-10px);
     opacity: 0;
     font-size: 11px;
     color: var(--text-secondary);
@@ -371,10 +371,11 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
+    z-index: 9999;
 }
 
 .toast.visible {
-    transform: translateX(0) translateY(-50%);
+    transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
 }

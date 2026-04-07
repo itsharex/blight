@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -154,13 +153,13 @@ func (a *App) CheckForUpdates() UpdateInfo {
 		return UpdateInfo{Available: false}
 	}
 
-	log.Info("update available", map[string]interface{}{"version": rel.Version.String()})
+	log.Info("update available", map[string]interface{}{"version": rel.Version})
 
 	return UpdateInfo{
 		Available: true,
-		Version:   rel.Version.String(),
-		URL:       rel.AssetURL,
-		Notes:     rel.ReleaseNotes,
+		Version:   rel.Version,
+		URL:       rel.URL,
+		Notes:     rel.Notes,
 	}
 }
 
@@ -176,25 +175,18 @@ func (a *App) InstallUpdate() string {
 		return "No update found"
 	}
 
-	log.Info("installing update", map[string]interface{}{"version": rel.Version.String()})
+	log.Info("installing update", map[string]interface{}{"version": rel.Version})
 	if err := u.ApplyUpdate(rel); err != nil {
 		log.Error("update failed", map[string]interface{}{"error": err.Error()})
 		return "Update failed: " + err.Error()
 	}
 
-	log.Info("update applied, restarting...")
+	log.Info("update applied — NSIS installer will handle the restart")
 
-	exe, err := os.Executable()
-	if err != nil {
-		log.Error("could not get executable path for restart", map[string]interface{}{"error": err.Error()})
-		return "success"
-	}
-
+	// The NSIS installer (run with /S) kills the process and relaunches.
+	// Give it a moment then quit so the installer can replace the binary.
 	go func() {
-		time.Sleep(300 * time.Millisecond)
-		cmd := exec.Command(exe)
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x00000008}
-		cmd.Start()
+		time.Sleep(2 * time.Second)
 		runtime.Quit(a.ctx)
 	}()
 
