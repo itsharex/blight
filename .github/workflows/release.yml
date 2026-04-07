@@ -113,21 +113,34 @@ jobs:
 
       - name: Generate changelog
         id: changelog
+        env:
+          REPO: devatblight/blight
         run: |
-          # Get the previous tag (if any)
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           {
             echo "changelog<<CHANGELOG_EOF"
 
             if [ -z "$PREV_TAG" ]; then
-              echo "### Initial Release"
-              echo ""
-              git log --oneline --no-merges | head -30
+              RAW=$(git log --oneline --no-merges | head -30)
             else
-              echo "### Changes since ${PREV_TAG}"
-              echo ""
-              git log "${PREV_TAG}..HEAD" --oneline --no-merges
+              RAW=$(git log "${PREV_TAG}..HEAD" --oneline --no-merges)
+            fi
+
+            # Drop version-bump and package.json-only commits — they're noise
+            COMMITS=$(echo "$RAW" | grep -v -iE \
+              "(bump version|update package\.json|update version|bump package)" \
+              || true)
+
+            if [ -z "$COMMITS" ]; then
+              echo "_No notable changes._"
+            else
+              while IFS= read -r line; do
+                [ -z "$line" ] && continue
+                HASH=$(echo "$line" | cut -d' ' -f1)
+                MSG=$(echo "$line" | cut -d' ' -f2-)
+                echo "- [\`${HASH}\`](https://github.com/${REPO}/commit/${HASH}) ${MSG}"
+              done <<< "$COMMITS"
             fi
 
             echo "CHANGELOG_EOF"
@@ -137,31 +150,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.check-version.outputs.tag }}
-          name: "blight ${{ needs.check-version.outputs.tag }} (${{ needs.check-version.outputs.channel }})"
+          name: "blight ${{ needs.check-version.outputs.tag }}"
           prerelease: ${{ needs.check-version.outputs.prerelease }}
-          generate_release_notes: true
           body: |
-            # blight ${{ needs.check-version.outputs.tag }}
-
-            > **${{ needs.check-version.outputs.channel }}** release
-
             > [!WARNING]
-            > This is a **${{ needs.check-version.outputs.channel }}** build. Bugs may occur and features may be incomplete or change without notice. Please report issues on the [issues page](../../issues).
+            > This is an early **${{ needs.check-version.outputs.channel }}** build — things may be rough. [Report issues here.](../../issues)
 
             ## What's Changed
 
             ${{ steps.changelog.outputs.changelog }}
 
-            ## Downloads
+            ## Install
 
-            | Platform | File |
-            |----------|------|
-            | Windows (x64) | `blight-windows-amd64-setup.exe` |
-
-            > **Installation**: Run the setup file. blight installs to your user directory (no admin/UAC required) and adds itself to Windows startup automatically.
+            Download **`blight-windows-amd64-setup.exe`** below and run it.
+            Installs to your user folder — no admin prompt. Starts with Windows automatically.
 
             ---
 
-            *Built from `${{ github.ref_name }}` branch at `${{ github.sha }}`*
+            Built from [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) · `${{ github.ref_name }}`
           files: |
             artifacts/blight-windows-amd64-setup/*
