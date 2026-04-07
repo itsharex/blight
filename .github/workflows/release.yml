@@ -8,7 +8,7 @@ on:
 
 jobs:
   check-version:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       version: ${{ steps.check.outputs.version }}
@@ -22,7 +22,6 @@ jobs:
 
       - name: Check for version bump
         id: check
-        shell: bash
         run: |
           VERSION=$(node -p "require('./frontend/package.json').version")
           BRANCH="${GITHUB_REF#refs/heads/}"
@@ -62,7 +61,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version-file: go.mod
+          cache: true
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -77,14 +77,14 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: pnpm install
 
       - name: Build
-        run: wails build
+        run: wails build -ldflags "-X main.Version=${{ needs.check-version.outputs.version }}"
 
       - name: Rename artifact
         shell: bash
@@ -93,12 +93,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: blight-windows-amd64.exe
+          name: blight-windows-amd64
           path: blight-windows-amd64.exe
 
   release:
     needs: [check-version, build]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
@@ -113,7 +113,6 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        shell: bash
         run: |
           # Get the previous tag (if any)
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -163,4 +162,4 @@ jobs:
 
             *Built from `${{ github.ref_name }}` branch at `${{ github.sha }}`*
           files: |
-            artifacts/blight-windows-amd64.exe/*
+            artifacts/blight-windows-amd64/*
