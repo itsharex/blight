@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, dev]
     paths:
-      - 'frontend/package.json'
+      - 'wails.json'
 
 jobs:
   check-version:
@@ -23,7 +23,7 @@ jobs:
       - name: Check for version bump
         id: check
         run: |
-          VERSION=$(node -p "require('./frontend/package.json').version")
+          VERSION=$(jq -r '.info.productVersion' wails.json)
           BRANCH="${GITHUB_REF#refs/heads/}"
 
           # Determine release channel from branch
@@ -132,9 +132,9 @@ jobs:
               RAW=$(git log "${PREV_TAG}..HEAD" --oneline --no-merges)
             fi
 
-            # Drop version-bump and package.json-only commits — they're noise
+            # Drop version-bump commits — they're noise
             COMMITS=$(echo "$RAW" | grep -v -iE \
-              "(bump version|update package\.json|update version|bump package)" \
+              "(bump version|update wails\.json|update version|bump package)" \
               || true)
 
             if [ -z "$COMMITS" ]; then
