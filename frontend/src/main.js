@@ -272,9 +272,14 @@ class Blight {
 
     onSearchInput() {
         clearTimeout(this.debounceTimer);
+        const query = this.searchInput.value.trim();
+        if (!query) {
+            this.setLoading(false);
+            this.loadDefaultResults();
+            return;
+        }
         this.setLoading(true);
         this.debounceTimer = setTimeout(async () => {
-            const query = this.searchInput.value.trim();
             const seq = ++this.searchSeq;
             const results = await Search(query);
             this.setLoading(false);
@@ -286,14 +291,21 @@ class Blight {
         }, 120);
     }
 
-    async loadDefaultResults() {
-        const seq = ++this.searchSeq;
-        const results = await Search('');
-        if (seq !== this.searchSeq) return;
+    loadDefaultResults() {
+        this.searchSeq++; // cancel any in-flight search
         this.currentQuery = '';
-        this.results = results;
+        this.results = [];
         this.selectedIndex = 0;
-        this.renderResults();
+        this.showEmptyState();
+    }
+
+    showEmptyState() {
+        this.resultsContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-hint">Search apps, files, and commands</div>
+            </div>
+        `;
+        this.updateFooterHints(null);
     }
 
     setLoading(loading) {
