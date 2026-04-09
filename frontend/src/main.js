@@ -83,13 +83,15 @@ class Blight {
             console.error('Failed to load config on init:', e);
         }
 
-        this.checkForUpdates();
         const firstRun = await IsFirstRun();
         if (firstRun) {
             this.showSplash();
         } else {
             this.showLauncher();
         }
+
+        // Run update check in background so startup stays instant.
+        this.checkForUpdates();
     }
 
     async checkForUpdates() {
@@ -299,6 +301,7 @@ class Blight {
             this.loadDefaultResults();
             return;
         }
+        this.launcherEl.classList.remove('spotlight-mode');
         this.setLoading(true);
         this.debounceTimer = setTimeout(async () => {
             const seq = ++this.searchSeq;
@@ -342,15 +345,8 @@ class Blight {
         this.currentQuery = '';
         this.results = [];
         this.selectedIndex = 0;
-        this.showEmptyState();
-    }
-
-    showEmptyState() {
-        this.resultsContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-hint">Search apps, files, and commands</div>
-            </div>
-        `;
+        this.resultsContainer.innerHTML = '';
+        this.launcherEl.classList.add('spotlight-mode');
         this.updateFooterHints(null);
     }
 
@@ -450,6 +446,7 @@ class Blight {
 
     renderResults() {
         const renderSeq = ++this.renderSeq;
+        this.launcherEl.classList.remove('spotlight-mode');
         if (this.results.length === 0) {
             this.resultsContainer.innerHTML = `
                 <div class="no-results">

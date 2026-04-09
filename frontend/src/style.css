@@ -88,6 +88,20 @@ body {
     flex-shrink: 0;
 }
 
+.launcher.spotlight-mode {
+    justify-content: center;
+}
+
+.launcher.spotlight-mode .search-container {
+    padding: 16px 18px;
+}
+
+.launcher.spotlight-mode .divider,
+.launcher.spotlight-mode .results-container,
+.launcher.spotlight-mode .footer {
+    display: none;
+}
+
 .search-icon {
     color: var(--text-tertiary);
     flex-shrink: 0;
