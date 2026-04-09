@@ -8,7 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,8 +41,31 @@ jobs:
         working-directory: frontend
         run: pnpm install
 
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libgtk-3-dev libayatana-appindicator3-dev libx11-dev libwebkit2gtk-4.1-dev
+          version: 1.0
+
+      - name: Set up webkit2gtk-4.0 pkg-config shim
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          if ! pkg-config --exists webkit2gtk-4.0 && pkg-config --exists webkit2gtk-4.1; then
+            mkdir -p "$HOME/.pkgconfig"
+            printf 'Name: webkit2gtk-4.0\nDescription: Compatibility shim for webkit2gtk-4.1\nVersion: 4.0\nRequires: webkit2gtk-4.1\n' > "$HOME/.pkgconfig/webkit2gtk-4.0.pc"
+            printf 'Name: javascriptcoregtk-4.0\nDescription: Compatibility shim for javascriptcoregtk-4.1\nVersion: 4.0\nRequires: javascriptcoregtk-4.1\n' > "$HOME/.pkgconfig/javascriptcoregtk-4.0.pc"
+            echo "PKG_CONFIG_PATH=$HOME/.pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+          fi
+
       - name: Install NSIS
+        if: matrix.os == 'windows-latest'
         run: choco install nsis -y
 
-      - name: Build NSIS installer (dry run — no upload)
+      - name: Build installer/package (dry run — no upload)
+        if: matrix.os == 'windows-latest'
         run: wails build -nsis -ldflags "-X main.Version=0.0.0-ci"
+
+      - name: Build app package (dry run — no upload)
+        if: matrix.os != 'windows-latest'
+        run: wails build -ldflags "-X main.Version=0.0.0-ci"

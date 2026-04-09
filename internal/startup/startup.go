@@ -1,3 +1,5 @@
+//go:build windows
+
 // Package startup manages the "run on system startup" feature via the Windows registry.
 // It writes/removes a value under HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 // so blight launches automatically when the user logs in.
@@ -13,19 +15,19 @@ import (
 const regRunPath = `Software\Microsoft\Windows\CurrentVersion\Run`
 
 var (
-	advapi32           = syscall.NewLazyDLL("advapi32.dll")
-	procRegOpenKeyEx   = advapi32.NewProc("RegOpenKeyExW")
-	procRegSetValueEx  = advapi32.NewProc("RegSetValueExW")
-	procRegDeleteValue = advapi32.NewProc("RegDeleteValueW")
+	advapi32            = syscall.NewLazyDLL("advapi32.dll")
+	procRegOpenKeyEx    = advapi32.NewProc("RegOpenKeyExW")
+	procRegSetValueEx   = advapi32.NewProc("RegSetValueExW")
+	procRegDeleteValue  = advapi32.NewProc("RegDeleteValueW")
 	procRegQueryValueEx = advapi32.NewProc("RegQueryValueExW")
-	procRegCloseKey    = advapi32.NewProc("RegCloseKey")
+	procRegCloseKey     = advapi32.NewProc("RegCloseKey")
 )
 
 const (
-	hkeyCurrentUser  = uintptr(0x80000001)
-	keySetValue      = uint32(0x0002)
-	keyQueryValue    = uint32(0x0001)
-	regSZ            = uint32(1)
+	hkeyCurrentUser = uintptr(0x80000001)
+	keySetValue     = uint32(0x0002)
+	keyQueryValue   = uint32(0x0001)
+	regSZ           = uint32(1)
 )
 
 func openRunKey(access uint32) (uintptr, error) {
