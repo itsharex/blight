@@ -215,75 +215,260 @@
         <button id="settings-close" class="settings-close-btn" title="Close">✕</button>
       </div>
 
-      <div class="settings-body">
+      <!-- Sidebar + Content layout -->
+      <div class="settings-layout">
+        <nav class="settings-nav">
+          <button class="settings-nav-item active" data-tab="general">General</button>
+          <button class="settings-nav-item" data-tab="search">Search</button>
+          <button class="settings-nav-item" data-tab="appearance">Appearance</button>
+          <button class="settings-nav-item" data-tab="system">System</button>
+          <button class="settings-nav-item" data-tab="files">File Index</button>
+          <button class="settings-nav-item" data-tab="updates">Updates</button>
+        </nav>
 
-        <!-- General -->
-        <div class="settings-section-group">
-          <div class="settings-group-label">General</div>
+        <div class="settings-body">
 
-          <div class="settings-row-item">
-            <div class="settings-row-info">
-              <div class="settings-row-name">Launch Hotkey</div>
-              <div class="settings-row-desc">Global shortcut to show/hide blight</div>
+          <!-- === TAB: General === -->
+          <div class="settings-tab" id="tab-general">
+
+            <div class="settings-section-group">
+              <div class="settings-group-label">Launch</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Launch Hotkey</div>
+                  <div class="settings-row-desc">Global shortcut to show/hide blight</div>
+                </div>
+                <div class="settings-row-control">
+                  <div class="hotkey-badge" id="settings-hotkey-display">Alt+Space</div>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">On Show</div>
+                  <div class="settings-row-desc">What happens to the search box when blight opens</div>
+                </div>
+                <div class="settings-row-control">
+                  <select id="settings-last-query-mode" class="settings-select">
+                    <option value="clear">Clear query</option>
+                    <option value="preserve">Preserve last query</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Hide When Deactivated</div>
+                  <div class="settings-row-desc">Close blight when it loses focus</div>
+                </div>
+                <div class="settings-row-control">
+                  <label class="settings-toggle">
+                    <input type="checkbox" id="settings-hide-deactivated" checked />
+                    <span class="settings-toggle-track"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Window Position</div>
+                  <div class="settings-row-desc">Where to show blight on screen</div>
+                </div>
+                <div class="settings-row-control">
+                  <select id="settings-window-position" class="settings-select">
+                    <option value="center">Screen center</option>
+                    <option value="top-center">Top center</option>
+                    <option value="cursor">Near cursor</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="settings-row-control">
-              <div class="hotkey-badge" id="settings-hotkey-display">Alt+Space</div>
+
+            <div class="settings-section-group">
+              <div class="settings-group-label">Clipboard</div>
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Clipboard History Size</div>
+                  <div class="settings-row-desc">Maximum number of clipboard entries to store</div>
+                </div>
+                <div class="settings-row-control">
+                  <input id="settings-clipboard-size" class="settings-input" type="number" min="5" max="500" value="50" />
+                  <span class="settings-input-unit">entries</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="settings-row-item">
-            <div class="settings-row-info">
-              <div class="settings-row-name">Clipboard History</div>
-              <div class="settings-row-desc">Maximum number of clipboard entries to store</div>
-            </div>
-            <div class="settings-row-control">
-              <input id="settings-clipboard-size" class="settings-input" type="number" min="5" max="500" value="50" />
-              <span class="settings-input-unit">entries</span>
+          <!-- === TAB: Search === -->
+          <div class="settings-tab hidden" id="tab-search">
+            <div class="settings-section-group">
+              <div class="settings-group-label">Search Behaviour</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Max Results</div>
+                  <div class="settings-row-desc">Maximum results to show per search (per category)</div>
+                </div>
+                <div class="settings-row-control">
+                  <input id="settings-max-results" class="settings-input" type="number" min="3" max="20" value="8" />
+                  <span class="settings-input-unit">results</span>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Search Delay</div>
+                  <div class="settings-row-desc">Debounce delay before triggering search</div>
+                </div>
+                <div class="settings-row-control">
+                  <input id="settings-search-delay" class="settings-input" type="number" min="0" max="500" value="120" />
+                  <span class="settings-input-unit">ms</span>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Placeholder Text</div>
+                  <div class="settings-row-desc">Custom placeholder shown in the search box</div>
+                </div>
+                <div class="settings-row-control">
+                  <input id="settings-placeholder-text" class="settings-input settings-input-wide" type="text" maxlength="60" placeholder="Search apps, commands, files…" />
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Show Placeholder</div>
+                  <div class="settings-row-desc">Display placeholder text in the search input</div>
+                </div>
+                <div class="settings-row-control">
+                  <label class="settings-toggle">
+                    <input type="checkbox" id="settings-show-placeholder" checked />
+                    <span class="settings-toggle-track"></span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- === TAB: Appearance === -->
+          <div class="settings-tab hidden" id="tab-appearance">
+            <div class="settings-section-group">
+              <div class="settings-group-label">Theme</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Color Scheme</div>
+                  <div class="settings-row-desc">Visual theme for the launcher</div>
+                </div>
+                <div class="settings-row-control">
+                  <select id="settings-theme" class="settings-select">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                    <option value="system">Follow System</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-group">
+              <div class="settings-group-label">Animations</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Enable Animations</div>
+                  <div class="settings-row-desc">Smooth transitions and scale animations</div>
+                </div>
+                <div class="settings-row-control">
+                  <label class="settings-toggle">
+                    <input type="checkbox" id="settings-use-animation" checked />
+                    <span class="settings-toggle-track"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- === TAB: System === -->
+          <div class="settings-tab hidden" id="tab-system">
+            <div class="settings-section-group">
+              <div class="settings-group-label">System Integration</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Start on Login</div>
+                  <div class="settings-row-desc">Launch blight automatically when Windows starts</div>
+                </div>
+                <div class="settings-row-control">
+                  <label class="settings-toggle">
+                    <input type="checkbox" id="settings-start-on-startup" />
+                    <span class="settings-toggle-track"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Hide Tray Icon</div>
+                  <div class="settings-row-desc">Remove blight from the system tray (use hotkey to open)</div>
+                </div>
+                <div class="settings-row-control">
+                  <label class="settings-toggle">
+                    <input type="checkbox" id="settings-hide-notify-icon" />
+                    <span class="settings-toggle-track"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- === TAB: File Index === -->
+          <div class="settings-tab hidden" id="tab-files">
+            <div class="settings-section-group">
+              <div class="settings-group-label">File Index</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Index Status</div>
+                  <div id="settings-index-status" class="settings-row-desc">—</div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="settings-reindex" class="settings-btn">Reindex</button>
+                  <button id="settings-clear-index" class="settings-btn settings-btn-danger">Clear</button>
+                </div>
+              </div>
+
+              <div class="settings-row-item settings-row-item--column">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Extra Directories</div>
+                  <div class="settings-row-desc">Additional folders to include in the file index</div>
+                </div>
+                <div id="settings-index-dirs" class="settings-dirs-list"></div>
+                <button id="settings-add-dir" class="settings-btn settings-btn-add">+ Add Directory</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- === TAB: Updates === -->
+          <div class="settings-tab hidden" id="tab-updates">
+            <div class="settings-section-group">
+              <div class="settings-group-label">Updates</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Version</div>
+                  <div id="settings-version" class="settings-row-desc"></div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="settings-check-updates" class="settings-btn">Check for Updates</button>
+                </div>
+              </div>
+              <div id="settings-update-status" class="settings-update-status"></div>
+            </div>
+          </div>
+
         </div>
-
-        <!-- File Index -->
-        <div class="settings-section-group">
-          <div class="settings-group-label">File Index</div>
-
-          <div class="settings-row-item">
-            <div class="settings-row-info">
-              <div class="settings-row-name">Index Status</div>
-              <div id="settings-index-status" class="settings-row-desc">—</div>
-            </div>
-            <div class="settings-row-control">
-              <button id="settings-reindex" class="settings-btn">Reindex</button>
-              <button id="settings-clear-index" class="settings-btn settings-btn-danger">Clear</button>
-            </div>
-          </div>
-
-          <div class="settings-row-item settings-row-item--column">
-            <div class="settings-row-info">
-              <div class="settings-row-name">Extra Directories</div>
-              <div class="settings-row-desc">Additional folders to include in the file index</div>
-            </div>
-            <div id="settings-index-dirs" class="settings-dirs-list"></div>
-            <button id="settings-add-dir" class="settings-btn settings-btn-add">+ Add Directory</button>
-          </div>
-        </div>
-
-        <!-- Updates -->
-        <div class="settings-section-group">
-          <div class="settings-group-label">Updates</div>
-
-          <div class="settings-row-item">
-            <div class="settings-row-info">
-              <div class="settings-row-name">Version</div>
-              <div id="settings-version" class="settings-row-desc"></div>
-            </div>
-            <div class="settings-row-control">
-              <button id="settings-check-updates" class="settings-btn">Check for Updates</button>
-            </div>
-          </div>
-          <div id="settings-update-status" class="settings-update-status"></div>
-        </div>
-
       </div>
 
       <div class="settings-footer">

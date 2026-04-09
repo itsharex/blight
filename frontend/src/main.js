@@ -2,7 +2,7 @@ import {
     IsFirstRun, IsSettingsMode, CompleteOnboarding, Search, Execute, HideWindow,
     GetContextActions, ExecuteContextAction, CheckForUpdates, InstallUpdate,
     GetIcon, GetConfig, SaveSettings, GetVersion, ReindexFiles, ClearIndex,
-    CloseSettings
+    CloseSettings, GetStartupEnabled
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
@@ -28,12 +28,20 @@ class Blight {
         this.currentQuery = '';
         this.settingsMode = false;
 
+        // Runtime settings (loaded from config on init)
+        this.searchDelay = 120;
+        this.hideWhenDeactivated = true;
+        this.lastQueryMode = 'clear';
+
         // Icon cache: path → base64 data URI (persists across re-renders)
         this.iconCache = new Map();
         this.renderSeq = 0;
 
         // Notification history
         this.notifications = [];
+
+        // Track index dirs for settings save
+        this._currentIndexDirs = [];
 
         this.searchInput = document.getElementById('search-input');
         this.resultsContainer = document.getElementById('results');
@@ -63,6 +71,16 @@ class Blight {
             this.openSettings();
             return;
         }
+
+        // Load and apply config settings that affect the frontend
+        try {
+            const config = await GetConfig();
+            this._applyRuntimeSettings(config);
+            this._currentIndexDirs = config.indexDirs || [];
+        } catch (e) {
+            console.error('Failed to load config on init:', e);
+        }
+
         this.checkForUpdates();
         const firstRun = await IsFirstRun();
         if (firstRun) {
@@ -248,17 +266,18 @@ class Blight {
         EventsOn('windowShown', () => {
             this.lastShownAt = Date.now();
             this.isHiding = false;
-            // Reset to clean state on every show
-            this.searchInput.value = '';
-            this.currentQuery = '';
-            this.loadDefaultResults();
-            // Focus must be deferred slightly so the window is fully visible
+            if (this.lastQueryMode !== 'preserve') {
+                this.searchInput.value = '';
+                this.currentQuery = '';
+                this.loadDefaultResults();
+            }
             setTimeout(() => {
                 this.searchInput.focus();
                 this.searchInput.select();
             }, 30);
         });
         window.addEventListener('blur', () => {
+            if (!this.hideWhenDeactivated) return;
             if (this.isHiding) return;
             if (Date.now() - this.lastShownAt < 600) return;
             if (!this.settingsPanelEl.classList.contains('hidden')) return;
@@ -288,7 +307,32 @@ class Blight {
             this.results = results;
             this.selectedIndex = 0;
             this.renderResults();
-        }, 120);
+        }, this.searchDelay);
+    }
+
+    // Apply settings that the frontend can act on immediately (no restart needed)
+    _applyRuntimeSettings(cfg) {
+        // Search delay
+        if (cfg.searchDelay > 0) this.searchDelay = cfg.searchDelay;
+
+        // Hide on deactivate
+        this.hideWhenDeactivated = cfg.hideWhenDeactivated !== false;
+
+        // Last query mode
+        this.lastQueryMode = cfg.lastQueryMode || 'clear';
+
+        // Placeholder
+        if (cfg.showPlaceholder !== false) {
+            this.searchInput.placeholder = cfg.placeholderText || 'Search apps, commands, files…';
+        } else {
+            this.searchInput.placeholder = '';
+        }
+
+        // Animations
+        document.documentElement.classList.toggle('no-animations', !cfg.useAnimation);
+
+        // Theme
+        document.documentElement.dataset.theme = cfg.theme || 'dark';
     }
 
     loadDefaultResults() {
@@ -709,26 +753,83 @@ class Blight {
         this.settingsPanelEl.offsetHeight; // force reflow
         this.settingsPanelEl.style.animation = '';
 
-        try {
-            const [config, version] = await Promise.all([GetConfig(), GetVersion()]);
+        // Activate first tab when opening
+        this._activateSettingsTab('general');
 
+        try {
+            const [config, version, startupEnabled] = await Promise.all([
+                GetConfig(), GetVersion(), GetStartupEnabled()
+            ]);
+
+            // General tab
             const hotkeyDisplay = document.getElementById('settings-hotkey-display');
             if (hotkeyDisplay) hotkeyDisplay.textContent = config.hotkey || 'Alt+Space';
+
+            const lastQueryMode = document.getElementById('settings-last-query-mode');
+            if (lastQueryMode) lastQueryMode.value = config.lastQueryMode || 'clear';
+
+            const hideDeactivated = document.getElementById('settings-hide-deactivated');
+            if (hideDeactivated) hideDeactivated.checked = config.hideWhenDeactivated !== false;
+
+            const windowPosition = document.getElementById('settings-window-position');
+            if (windowPosition) windowPosition.value = config.windowPosition || 'center';
 
             const clipSizeInput = document.getElementById('settings-clipboard-size');
             if (clipSizeInput) clipSizeInput.value = config.maxClipboard || 50;
 
+            // Search tab
+            const maxResults = document.getElementById('settings-max-results');
+            if (maxResults) maxResults.value = config.maxResults || 8;
+
+            const searchDelay = document.getElementById('settings-search-delay');
+            if (searchDelay) searchDelay.value = config.searchDelay || 120;
+
+            const placeholderText = document.getElementById('settings-placeholder-text');
+            if (placeholderText) placeholderText.value = config.placeholderText || '';
+
+            const showPlaceholder = document.getElementById('settings-show-placeholder');
+            if (showPlaceholder) showPlaceholder.checked = config.showPlaceholder !== false;
+
+            // Appearance tab
+            const theme = document.getElementById('settings-theme');
+            if (theme) theme.value = config.theme || 'dark';
+
+            const useAnimation = document.getElementById('settings-use-animation');
+            if (useAnimation) useAnimation.checked = config.useAnimation !== false;
+
+            // System tab
+            const startOnStartup = document.getElementById('settings-start-on-startup');
+            if (startOnStartup) startOnStartup.checked = startupEnabled;
+
+            const hideNotifyIcon = document.getElementById('settings-hide-notify-icon');
+            if (hideNotifyIcon) hideNotifyIcon.checked = !!config.hideNotifyIcon;
+
+            // Updates tab
             const versionEl = document.getElementById('settings-version');
             if (versionEl) versionEl.textContent = `v${version}`;
 
+            // File index status
             const indexStatus = document.getElementById('settings-index-status');
             if (indexStatus) {
                 const lastNotif = this.notifications[0];
                 if (lastNotif) indexStatus.textContent = lastNotif.message;
             }
+
+            // Index dirs
+            this._currentIndexDirs = config.indexDirs || [];
+            this._renderIndexDirs();
         } catch (e) {
             console.error('Failed to load settings:', e);
         }
+    }
+
+    _activateSettingsTab(name) {
+        document.querySelectorAll('.settings-nav-item').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === name);
+        });
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.classList.toggle('hidden', tab.id !== `tab-${name}`);
+        });
     }
 
     closeSettings() {
@@ -741,6 +842,11 @@ class Blight {
     }
 
     bindSettings() {
+        // Tab navigation
+        document.querySelectorAll('.settings-nav-item').forEach(btn => {
+            btn.addEventListener('click', () => this._activateSettingsTab(btn.dataset.tab));
+        });
+
         const closeBtn = document.getElementById('settings-close');
         if (closeBtn) closeBtn.addEventListener('click', () => this.closeSettings());
 
@@ -750,10 +856,31 @@ class Blight {
         const saveBtn = document.getElementById('settings-save');
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {
-                const hotkey = document.getElementById('settings-hotkey-display')?.textContent || 'Alt+Space';
-                const maxClipboard = parseInt(document.getElementById('settings-clipboard-size')?.value || '50', 10);
+                const cfg = {
+                    // General
+                    hotkey: document.getElementById('settings-hotkey-display')?.textContent || 'Alt+Space',
+                    maxClipboard: parseInt(document.getElementById('settings-clipboard-size')?.value || '50', 10),
+                    lastQueryMode: document.getElementById('settings-last-query-mode')?.value || 'clear',
+                    hideWhenDeactivated: document.getElementById('settings-hide-deactivated')?.checked ?? true,
+                    windowPosition: document.getElementById('settings-window-position')?.value || 'center',
+                    // Search
+                    maxResults: parseInt(document.getElementById('settings-max-results')?.value || '8', 10),
+                    searchDelay: parseInt(document.getElementById('settings-search-delay')?.value || '120', 10),
+                    placeholderText: document.getElementById('settings-placeholder-text')?.value || '',
+                    showPlaceholder: document.getElementById('settings-show-placeholder')?.checked ?? true,
+                    // Appearance
+                    theme: document.getElementById('settings-theme')?.value || 'dark',
+                    useAnimation: document.getElementById('settings-use-animation')?.checked ?? true,
+                    // System
+                    startOnStartup: document.getElementById('settings-start-on-startup')?.checked ?? false,
+                    hideNotifyIcon: document.getElementById('settings-hide-notify-icon')?.checked ?? false,
+                    // Preserve fields not shown in UI
+                    indexDirs: this._currentIndexDirs || [],
+                };
                 try {
-                    await SaveSettings(hotkey, maxClipboard);
+                    await SaveSettings(cfg);
+                    // Apply settings that affect the frontend immediately
+                    this._applyRuntimeSettings(cfg);
                     if (this.settingsMode) {
                         CloseSettings();
                         return;
@@ -824,11 +951,45 @@ class Blight {
             });
         }
 
+        const addDirBtn = document.getElementById('settings-add-dir');
+        if (addDirBtn) {
+            addDirBtn.addEventListener('click', () => {
+                const dir = prompt('Enter directory path to index:');
+                if (dir && dir.trim()) {
+                    this._currentIndexDirs = [...(this._currentIndexDirs || []), dir.trim()];
+                    this._renderIndexDirs();
+                }
+            });
+        }
+
         EventsOn('indexStatus', (status) => {
             const statusEl = document.getElementById('settings-index-status');
             if (statusEl && !this.settingsPanelEl.classList.contains('hidden')) {
                 statusEl.textContent = status.message;
             }
+        });
+    }
+
+    _renderIndexDirs() {
+        const container = document.getElementById('settings-index-dirs');
+        if (!container) return;
+        const dirs = this._currentIndexDirs || [];
+        if (dirs.length === 0) {
+            container.innerHTML = '<div style="font-size:11px;color:var(--text-tertiary)">No extra directories added</div>';
+            return;
+        }
+        container.innerHTML = dirs.map((d, i) => `
+            <div class="settings-dir-item">
+                <span class="settings-dir-path">${this.escapeHtml(d)}</span>
+                <button class="settings-dir-remove" data-index="${i}">✕</button>
+            </div>
+        `).join('');
+        container.querySelectorAll('.settings-dir-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.index);
+                this._currentIndexDirs = this._currentIndexDirs.filter((_, i) => i !== idx);
+                this._renderIndexDirs();
+            });
         });
     }
 

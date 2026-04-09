@@ -74,8 +74,12 @@ export function ReindexFiles() {
   return window['go']['main']['App']['ReindexFiles']();
 }
 
-export function SaveSettings(arg1, arg2, arg3) {
-  return window['go']['main']['App']['SaveSettings'](arg1, arg2, arg3);
+export function SaveSettings(arg1) {
+  return window['go']['main']['App']['SaveSettings'](arg1);
+}
+
+export function GetStartupEnabled() {
+  return window['go']['main']['App']['GetStartupEnabled']();
 }
 
 export function Search(arg1) {

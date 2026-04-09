@@ -903,6 +903,42 @@ kbd {
     background: var(--bg-hover);
 }
 
+/* Settings sidebar + body layout */
+.settings-layout {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    width: 120px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 8px 0;
+    gap: 2px;
+}
+
+.settings-nav-item {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font);
+    text-align: left;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.settings-nav-item:hover { color: var(--text-primary); background: var(--bg-hover); }
+.settings-nav-item.active { color: var(--accent); background: var(--accent-soft); }
+
 .settings-body {
     flex: 1;
     overflow-y: auto;
@@ -917,6 +953,10 @@ kbd {
     background: rgba(255, 255, 255, 0.10);
     border-radius: 3px;
 }
+
+/* Tab visibility */
+.settings-tab { display: flex; flex-direction: column; gap: 4px; }
+.settings-tab.hidden { display: none; }
 
 .settings-section {
     padding: 10px 0;
@@ -1017,6 +1057,43 @@ kbd {
     width: 100%;
     margin-bottom: 6px;
 }
+
+.settings-dir-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.settings-dir-path {
+    flex: 1;
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-dir-remove {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 10px;
+    border-radius: 3px;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.settings-dir-remove:hover { color: #f87171; background: rgba(248,113,113,0.08); }
 
 .settings-input {
     width: 80px;
@@ -1171,3 +1248,87 @@ body.settings-only .settings-panel {
 
 .match-chars { color: var(--accent); font-weight: 600; }
 .match-char  { color: var(--accent); }
+
+/* === Settings: Toggle Switch === */
+
+.settings-toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.settings-toggle input { opacity: 0; width: 0; height: 0; }
+
+.settings-toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    border: 1px solid var(--border-strong);
+    transition: background var(--transition-normal), border-color var(--transition-normal);
+}
+
+.settings-toggle-track::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    transition: transform var(--transition-normal), background var(--transition-normal);
+}
+
+.settings-toggle input:checked + .settings-toggle-track {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.settings-toggle input:checked + .settings-toggle-track::after {
+    transform: translateX(16px) translateY(-50%);
+    background: white;
+}
+
+/* === Settings: Select === */
+
+.settings-select {
+    padding: 5px 26px 5px 8px;
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238E8E93' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: border-color var(--transition-fast);
+}
+
+.settings-select:focus { border-color: var(--border-focus); }
+
+.settings-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* === Settings: Wide text input === */
+
+.settings-input-wide { width: 180px; }
+
+/* === No-animations mode === */
+
+html.no-animations *,
+html.no-animations *::before,
+html.no-animations *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+}

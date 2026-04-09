@@ -19,6 +19,7 @@ import (
 	"blight/internal/files"
 	"blight/internal/hotkey"
 	"blight/internal/search"
+	"blight/internal/startup"
 	"blight/internal/tray"
 	"blight/internal/updater"
 
@@ -49,10 +50,30 @@ type ContextAction struct {
 }
 
 type BlightConfig struct {
+	// Core
 	FirstRun     bool     `json:"firstRun"`
 	Hotkey       string   `json:"hotkey"`
 	MaxClipboard int      `json:"maxClipboard"`
 	IndexDirs    []string `json:"indexDirs,omitempty"`
+
+	// Search behaviour (inspired by Flow Launcher)
+	MaxResults  int `json:"maxResults"`  // max results per category total, default 8
+	SearchDelay int `json:"searchDelay"` // debounce delay in ms, default 120
+
+	// Window behaviour
+	HideWhenDeactivated bool   `json:"hideWhenDeactivated"` // hide on focus loss, default true
+	LastQueryMode       string `json:"lastQueryMode"`       // "clear"|"preserve", default "clear"
+	WindowPosition      string `json:"windowPosition"`      // "center"|"cursor"|"top-center", default "center"
+
+	// Appearance
+	UseAnimation    bool   `json:"useAnimation"`    // enable animations, default true
+	ShowPlaceholder bool   `json:"showPlaceholder"` // show search placeholder, default true
+	PlaceholderText string `json:"placeholderText"` // custom placeholder text, default ""
+	Theme           string `json:"theme"`           // "dark"|"light"|"system", default "dark"
+
+	// System integration
+	StartOnStartup bool `json:"startOnStartup"` // add to Windows startup, default false
+	HideNotifyIcon bool `json:"hideNotifyIcon"` // hide system tray icon, default false
 }
 
 type App struct {
@@ -270,18 +291,55 @@ func (a *App) configPath() string {
 	return filepath.Join(a.configDir(), "config.json")
 }
 
+func defaultConfig() BlightConfig {
+	return BlightConfig{
+		FirstRun:            true,
+		Hotkey:              "Alt+Space",
+		MaxClipboard:        50,
+		MaxResults:          8,
+		SearchDelay:         120,
+		HideWhenDeactivated: true,
+		LastQueryMode:       "clear",
+		WindowPosition:      "center",
+		UseAnimation:        true,
+		ShowPlaceholder:     true,
+		PlaceholderText:     "",
+		Theme:               "dark",
+		StartOnStartup:      false,
+		HideNotifyIcon:      false,
+	}
+}
+
 func (a *App) loadConfig() {
 	data, err := os.ReadFile(a.configPath())
 	if err != nil {
-		a.config = BlightConfig{FirstRun: true, Hotkey: "Alt+Space", MaxClipboard: 50}
+		a.config = defaultConfig()
 		return
 	}
+	// Start with defaults so new fields are initialised even on old config files
+	a.config = defaultConfig()
 	if err := json.Unmarshal(data, &a.config); err != nil {
-		a.config = BlightConfig{FirstRun: true, Hotkey: "Alt+Space", MaxClipboard: 50}
+		a.config = defaultConfig()
 		return
 	}
+	// Clamp / validate
 	if a.config.MaxClipboard == 0 {
 		a.config.MaxClipboard = 50
+	}
+	if a.config.MaxResults == 0 {
+		a.config.MaxResults = 8
+	}
+	if a.config.SearchDelay == 0 {
+		a.config.SearchDelay = 120
+	}
+	if a.config.LastQueryMode == "" {
+		a.config.LastQueryMode = "clear"
+	}
+	if a.config.WindowPosition == "" {
+		a.config.WindowPosition = "center"
+	}
+	if a.config.Theme == "" {
+		a.config.Theme = "dark"
 	}
 }
 
@@ -314,18 +372,76 @@ func (a *App) GetConfig() BlightConfig {
 }
 
 // SaveSettings persists settings from the settings UI.
-func (a *App) SaveSettings(hotkey string, maxClipboard int, indexDirs []string) error {
-	if hotkey != "" {
-		a.config.Hotkey = hotkey
+// cfg is a partial BlightConfig — only non-zero/non-empty fields overwrite the
+// current config so the frontend can send only the fields it knows about.
+func (a *App) SaveSettings(cfg BlightConfig) error {
+	log := debug.Get()
+
+	if cfg.Hotkey != "" {
+		a.config.Hotkey = cfg.Hotkey
 	}
-	if maxClipboard > 0 {
-		a.config.MaxClipboard = maxClipboard
+	if cfg.MaxClipboard > 0 {
+		a.config.MaxClipboard = cfg.MaxClipboard
 		if a.clipboard != nil {
-			a.clipboard.SetMaxSize(maxClipboard)
+			a.clipboard.SetMaxSize(cfg.MaxClipboard)
 		}
 	}
-	a.config.IndexDirs = indexDirs
+	if cfg.IndexDirs != nil {
+		a.config.IndexDirs = cfg.IndexDirs
+	}
+	if cfg.MaxResults > 0 {
+		a.config.MaxResults = cfg.MaxResults
+	}
+	if cfg.SearchDelay > 0 {
+		a.config.SearchDelay = cfg.SearchDelay
+	}
+	if cfg.LastQueryMode != "" {
+		a.config.LastQueryMode = cfg.LastQueryMode
+	}
+	if cfg.WindowPosition != "" {
+		a.config.WindowPosition = cfg.WindowPosition
+	}
+	if cfg.Theme != "" {
+		a.config.Theme = cfg.Theme
+	}
+	if cfg.PlaceholderText != "" {
+		a.config.PlaceholderText = cfg.PlaceholderText
+	}
+	// Boolean fields are always updated (they can legitimately be false)
+	a.config.HideWhenDeactivated = cfg.HideWhenDeactivated
+	a.config.UseAnimation = cfg.UseAnimation
+	a.config.ShowPlaceholder = cfg.ShowPlaceholder
+	a.config.HideNotifyIcon = cfg.HideNotifyIcon
+
+	// System startup: sync Windows registry
+	if cfg.StartOnStartup != a.config.StartOnStartup {
+		a.config.StartOnStartup = cfg.StartOnStartup
+		if cfg.StartOnStartup {
+			if err := startup.Enable(); err != nil {
+				log.Error("startup.Enable failed", map[string]interface{}{"error": err.Error()})
+			}
+		} else {
+			if err := startup.Disable(); err != nil {
+				log.Error("startup.Disable failed", map[string]interface{}{"error": err.Error()})
+			}
+		}
+	}
+
+	// Tray icon visibility
+	if a.tray != nil {
+		if a.config.HideNotifyIcon {
+			a.tray.Stop()
+		} else {
+			a.tray.Start()
+		}
+	}
+
 	return a.saveConfig()
+}
+
+// GetStartupEnabled returns whether blight is currently registered to start on login.
+func (a *App) GetStartupEnabled() bool {
+	return startup.IsEnabled()
 }
 
 func (a *App) Search(query string) []SearchResult {
@@ -650,6 +766,13 @@ func (a *App) ClearIndex() {
 	a.fileIdx.ClearIndex()
 }
 
+func (a *App) maxResults() int {
+	if a.config.MaxResults > 0 {
+		return a.config.MaxResults
+	}
+	return 8
+}
+
 func (a *App) searchFiles(query string) []SearchResult {
 	if len(query) < 3 {
 		return nil
@@ -661,8 +784,9 @@ func (a *App) searchFiles(query string) []SearchResult {
 	}
 
 	fileResults := a.fileIdx.SearchFiles(query)
-	if len(fileResults) > 5 {
-		fileResults = fileResults[:5]
+	limit := a.maxResults()
+	if len(fileResults) > limit {
+		fileResults = fileResults[:limit]
 	}
 
 	var results []SearchResult
@@ -721,7 +845,7 @@ func (a *App) searchApps(query string) []SearchResult {
 	matches := search.Fuzzy(query, names, usageScores)
 
 	var results []SearchResult
-	limit := 10
+	limit := a.maxResults()
 	if len(matches) < limit {
 		limit = len(matches)
 	}

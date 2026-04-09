@@ -39,7 +39,9 @@ export function RefreshApps():Promise<void>;
 
 export function ReindexFiles():Promise<void>;
 
-export function SaveSettings(arg1:string,arg2:number,arg3:Array<string>):Promise<void>;
+export function SaveSettings(arg1:main.BlightConfig):Promise<void>;
+
+export function GetStartupEnabled():Promise<boolean>;
 
 export function Search(arg1:string):Promise<Array<main.SearchResult>>;
 
