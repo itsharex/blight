@@ -2,16 +2,17 @@ import {
     IsFirstRun, IsSettingsMode, CompleteOnboarding, Search, Execute, HideWindow,
     GetContextActions, ExecuteContextAction, CheckForUpdates, InstallUpdate,
     GetIcon, GetConfig, SaveSettings, GetVersion, ReindexFiles, ClearIndex,
-    CloseSettings, GetStartupEnabled, OpenFolderPicker
+    CloseSettings, GetStartupEnabled, OpenFolderPicker,
+    GetDataDir, GetInstallDir, OpenFolder, Uninstall, CancelIndex
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { main, files } from '../wailsjs/go/models';
 
-interface Notification {
+interface SystemNotif {
     icon: string;
-    message: string;
-    state: string;
-    time: string;
+    title: string;
+    subtitle: string;
+    action?: () => void;
 }
 
 function inputEl(id: string): HTMLInputElement | null {
@@ -44,7 +45,7 @@ class Blight {
     iconCache: Map<string, string>;
     renderSeq: number;
 
-    notifications: Notification[];
+    activeNotifs: Map<string, SystemNotif>;
     _currentIndexDirs: string[];
     lastUpdateCheck: number;
 
@@ -58,12 +59,6 @@ class Blight {
     launcherEl: HTMLElement;
     contextMenuEl: HTMLElement;
     settingsPanelEl: HTMLElement;
-    notifIndicator: HTMLElement;
-    notifIcon: HTMLElement;
-    notifText: HTMLElement;
-    notifHistory: HTMLElement;
-    notifHistoryList: HTMLElement | null;
-    notifClear: HTMLElement | null;
 
     constructor() {
         this.selectedIndex = 0;
@@ -85,7 +80,7 @@ class Blight {
         this.iconCache = new Map();
         this.renderSeq = 0;
 
-        this.notifications = [];
+        this.activeNotifs = new Map();
         this._currentIndexDirs = [];
         this.lastUpdateCheck = 0;
 
@@ -99,13 +94,6 @@ class Blight {
         this.launcherEl = document.getElementById('app')!;
         this.contextMenuEl = document.getElementById('context-menu')!;
         this.settingsPanelEl = document.getElementById('settings-panel')!;
-        this.notifIndicator = document.getElementById('notification-indicator')!;
-        this.notifIcon = document.getElementById('notif-icon')!;
-        this.notifText = document.getElementById('notif-text')!;
-        this.notifHistory = document.getElementById('notification-history')!;
-        this.notifHistoryList = document.getElementById('notif-history-list');
-        this.notifClear = document.getElementById('notif-clear');
-
         this.init();
     }
 
@@ -149,34 +137,69 @@ class Blight {
     }
 
     showUpdateUI(update: main.UpdateInfo): void {
-        const existing = document.querySelector('.update-badge');
-        if (existing) existing.remove();
+        this.activeNotifs.set('update', {
+            icon: '⬇',
+            title: `Update v${update.version} available`,
+            subtitle: 'Click to install',
+            action: () => this.installUpdate(update),
+        });
+        this._refreshSystemNotifs();
 
-        const badge = document.createElement('div');
-        badge.className = 'notification-indicator update-badge';
-        badge.innerHTML = `
-            <span class="notif-icon" style="color: #4ade80;">⬇</span>
-            <span class="notif-text" style="color: #4ade80;">Update ${update.version}</span>
-        `;
-        badge.style.cursor = 'pointer';
-        badge.title = `Click to install update ${update.version}`;
-        badge.onclick = () => this.installUpdate(update);
+        const row = document.getElementById('settings-update-install-row');
+        const label = document.getElementById('settings-update-version-label');
+        const installBtn = document.getElementById('settings-install-update') as HTMLButtonElement | null;
+        if (row) row.classList.remove('hidden');
+        if (label) label.textContent = `v${update.version} available`;
+        if (installBtn) installBtn.onclick = () => this.installUpdate(update);
+    }
 
-        if (this.notifIndicator && this.notifIndicator.parentNode) {
-            this.notifIndicator.parentNode.insertBefore(badge, this.notifIndicator);
-        }
+    showConfirmModal(title: string, body: string, okLabel: string, danger: boolean, onOk: () => void): void {
+        const modal = document.getElementById('confirm-modal')!;
+        document.getElementById('confirm-modal-title')!.textContent = title;
+        document.getElementById('confirm-modal-body')!.textContent = body;
+        const okBtn = document.getElementById('confirm-modal-ok') as HTMLButtonElement;
+        okBtn.textContent = okLabel;
+        okBtn.className = danger ? 'settings-btn settings-btn-danger' : 'settings-btn settings-btn-primary';
+        const cancelBtn = document.getElementById('confirm-modal-cancel')!;
+        const cleanup = () => { modal.classList.add('hidden'); okBtn.onclick = null; cancelBtn.onclick = null; };
+        okBtn.onclick = () => { cleanup(); onOk(); };
+        cancelBtn.onclick = () => cleanup();
+        modal.classList.remove('hidden');
     }
 
     async installUpdate(update: main.UpdateInfo): Promise<void> {
-        if (!confirm(`Install update ${update.version}?\nThe installer will close and restart blight automatically.`)) return;
+        this.showConfirmModal(
+            `Install update ${update.version}?`,
+            'The installer will close and restart blight automatically.',
+            'Install',
+            false,
+            async () => {
+                this._activateSettingsTab('updates');
+                this.settingsPanelEl.classList.remove('hidden');
 
-        this.showToast('Downloading update…', 'Please wait');
-        const res = await InstallUpdate();
-        if (res === 'success') {
-            this.showToast('Installing…', 'blight will restart shortly');
-        } else {
-            this.showToast('Update failed', res);
-        }
+                const bar = document.getElementById('settings-update-progress-bar');
+                const fill = document.getElementById('settings-update-progress-fill') as HTMLElement | null;
+                const text = document.getElementById('settings-update-progress-text');
+                if (bar) bar.style.display = 'block';
+                if (text) text.textContent = 'Downloading…';
+
+                const unsub = EventsOn('updateProgress', (pct: number) => {
+                    if (fill) fill.style.width = pct + '%';
+                    if (text) text.textContent = `Downloading… ${pct}%`;
+                });
+
+                const res = await InstallUpdate();
+                unsub();
+
+                if (res === 'success') {
+                    if (text) text.textContent = 'Installing — blight will restart shortly';
+                } else {
+                    if (bar) bar.style.display = 'none';
+                    if (text) text.textContent = '';
+                    this.showToast('Update failed', res);
+                }
+            }
+        );
     }
 
     showSplash(): void {
@@ -191,7 +214,6 @@ class Blight {
         setTimeout(() => this.searchInput.focus(), 50);
         this.bindEvents();
         this.listenIndexStatus();
-        this.bindNotificationUI();
         this.bindSettings();
         this.loadDefaultResults();
     }
@@ -297,9 +319,6 @@ class Blight {
                 if (!this.contextMenuEl.contains(target)) {
                     this.hideContextMenu();
                 }
-                if (!this.notifIndicator.contains(target) && !this.notifHistory.contains(target)) {
-                    this.notifHistory.classList.add('hidden');
-                }
             }
         });
 
@@ -327,7 +346,6 @@ class Blight {
             if (!this.hideWhenDeactivated) return;
             if (this.isHiding) return;
             if (Date.now() - this.lastShownAt < 600) return;
-            if (!this.settingsPanelEl.classList.contains('hidden')) return;
             this.isHiding = true;
             HideWindow();
         });
@@ -561,6 +579,7 @@ class Blight {
         });
 
         this.updateFooterHints(this.results[this.selectedIndex] ?? null);
+        this._refreshSystemNotifs();
     }
 
     updateFooterHints(result: main.SearchResult | null): void {
@@ -828,10 +847,20 @@ class Blight {
             const versionEl = document.getElementById('settings-version');
             if (versionEl) versionEl.textContent = `v${version}`;
 
+            // Misc tab — populate dirs lazily
+            GetDataDir().then(d => {
+                const el = document.getElementById('misc-data-dir');
+                if (el) el.textContent = d;
+            }).catch(() => {});
+            GetInstallDir().then(d => {
+                const el = document.getElementById('misc-install-dir');
+                if (el) el.textContent = d;
+            }).catch(() => {});
+
             const indexStatus = document.getElementById('settings-index-status');
             if (indexStatus) {
-                const lastNotif = this.notifications[0];
-                if (lastNotif) indexStatus.textContent = lastNotif.message;
+                const s = this.activeNotifs.get('indexing');
+                indexStatus.textContent = s ? s.title + ' ' + s.subtitle : '—';
             }
 
             this._currentIndexDirs = config.indexDirs || [];
@@ -873,7 +902,7 @@ class Blight {
         const saveBtn = document.getElementById('settings-save');
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {
-                const cfg: main.BlightConfig = {
+                const cfg = {
                     firstRun: false,
                     hotkey: document.getElementById('settings-hotkey-display')?.textContent || 'Alt+Space',
                     maxClipboard: parseInt(inputEl('settings-clipboard-size')?.value || '50', 10),
@@ -891,8 +920,9 @@ class Blight {
                     indexDirs: this._currentIndexDirs,
                 };
                 try {
-                    await SaveSettings(cfg);
-                    this._applyRuntimeSettings(cfg);
+                    const cfgObj = main.BlightConfig.createFrom(cfg);
+                    await SaveSettings(cfgObj);
+                    this._applyRuntimeSettings(cfgObj);
                     if (this.settingsMode) {
                         CloseSettings();
                         return;
@@ -906,12 +936,17 @@ class Blight {
         }
 
         const reindexBtn = document.getElementById('settings-reindex');
+        const cancelIndexBtn = document.getElementById('settings-cancel-index');
         if (reindexBtn) {
             reindexBtn.addEventListener('click', async () => {
                 await ReindexFiles();
                 const statusEl = document.getElementById('settings-index-status');
                 if (statusEl) statusEl.textContent = 'Reindexing…';
-                this.showToast('Reindexing files', 'This may take a moment');
+            });
+        }
+        if (cancelIndexBtn) {
+            cancelIndexBtn.addEventListener('click', () => {
+                CancelIndex();
             });
         }
 
@@ -987,10 +1022,47 @@ class Blight {
 
         EventsOn('indexStatus', (status: files.IndexStatus) => {
             const statusEl = document.getElementById('settings-index-status');
-            if (statusEl && !this.settingsPanelEl.classList.contains('hidden')) {
-                statusEl.textContent = status.message;
-            }
+            if (statusEl) statusEl.textContent = status.message;
+            const reindexBtn = document.getElementById('settings-reindex') as HTMLButtonElement | null;
+            const cancelBtn = document.getElementById('settings-cancel-index');
+            const indexing = status.state === 'indexing';
+            if (reindexBtn) reindexBtn.disabled = indexing;
+            if (cancelBtn) cancelBtn.classList.toggle('hidden', !indexing);
         });
+
+        // Misc tab
+        const miscOpenData = document.getElementById('misc-open-data');
+        const miscOpenInstall = document.getElementById('misc-open-install');
+        const miscUninstall = document.getElementById('misc-uninstall');
+
+        if (miscOpenData) {
+            miscOpenData.addEventListener('click', async () => {
+                const dir = await GetInstallDir();
+                OpenFolder(dir);
+            });
+        }
+        if (miscOpenInstall) {
+            miscOpenInstall.addEventListener('click', async () => {
+                const dir = await GetInstallDir();
+                OpenFolder(dir);
+            });
+        }
+        if (miscUninstall) {
+            miscUninstall.addEventListener('click', () => {
+                this.showConfirmModal(
+                    'Uninstall blight?',
+                    'This will permanently remove blight from your system. Your config and data in .blight will not be deleted.',
+                    'Uninstall',
+                    true,
+                    async () => {
+                        const res = await Uninstall();
+                        if (res !== 'success') {
+                            this.showToast('Uninstall failed', res.replace('not-found:', 'Uninstaller not found: ').replace('error:', ''));
+                        }
+                    }
+                );
+            });
+        }
     }
 
     _renderIndexDirs(): void {
@@ -1114,81 +1186,56 @@ class Blight {
         }, 5000);
     }
 
-    // --- Notification Indicator ---
+    // --- System Notifications (pinned top of results) ---
 
     listenIndexStatus(): void {
         EventsOn('indexStatus', (status: files.IndexStatus) => {
-            const stateIcons: Record<string, string> = {
-                checking: '🔍',
-                indexing: '📁',
-                ready: '✓',
-                idle: '—',
-            };
-            const icon = stateIcons[status.state] ?? '';
-            this.setNotification(icon, status.message, status.state);
-        });
-    }
-
-    setNotification(icon: string, message: string, state: string): void {
-        this.notifIcon.textContent = icon;
-        this.notifText.textContent = message;
-
-        this.notifications.unshift({
-            icon,
-            message,
-            state,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        });
-
-        if (this.notifications.length > 20) {
-            this.notifications = this.notifications.slice(0, 20);
-        }
-
-        this.renderNotificationHistory();
-    }
-
-    bindNotificationUI(): void {
-        this.notifIndicator.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.notifHistory.classList.toggle('hidden');
-        });
-
-        if (this.notifClear) {
-            this.notifClear.addEventListener('click', () => {
-                this.notifications = [];
-                this.renderNotificationHistory();
-            });
-        }
-
-        this.notifIndicator.addEventListener('mouseenter', () => {
-            if (this.notifications.length > 0) {
-                this.notifHistory.classList.remove('hidden');
+            if (status.state === 'indexing') {
+                const sub = status.count > 0
+                    ? `${status.count.toLocaleString()} files scanned`
+                    : status.message;
+                this.activeNotifs.set('indexing', { icon: '⏳', title: 'Indexing files…', subtitle: sub });
+            } else {
+                this.activeNotifs.delete('indexing');
             }
-        });
-
-        const footer = this.notifIndicator.closest('.footer');
-        footer?.addEventListener('mouseleave', () => {
-            this.notifHistory.classList.add('hidden');
+            this._refreshSystemNotifs();
         });
     }
 
-    renderNotificationHistory(): void {
-        if (!this.notifHistoryList) return;
+    _refreshSystemNotifs(): void {
+        if (this.launcherEl.classList.contains('spotlight-mode')) return;
 
-        if (this.notifications.length === 0) {
-            this.notifHistoryList.innerHTML = '<div class="notif-history-empty">No notifications</div>';
+        const existing = document.getElementById('system-notifs-section');
+
+        if (this.activeNotifs.size === 0) {
+            existing?.remove();
             return;
         }
 
-        this.notifHistoryList.innerHTML = this.notifications.map(n => `
-            <div class="notif-history-item">
-                <span class="notif-h-icon">${n.icon}</span>
-                <div class="notif-h-text">
-                    <div class="notif-h-msg">${this.escapeHtml(n.message)}</div>
-                    <div class="notif-h-time">${n.time}</div>
+        let inner = `<div class="result-category">Notification</div>`;
+        for (const [id, n] of this.activeNotifs) {
+            inner += `<div class="result-item notif-result-item" data-notif-id="${this.escapeHtml(id)}" style="${n.action ? 'cursor:pointer' : ''}">
+                <div class="result-icon-fallback">${n.icon}</div>
+                <div class="result-text">
+                    <div class="result-title">${this.escapeHtml(n.title)}</div>
+                    ${n.subtitle ? `<div class="result-subtitle">${this.escapeHtml(n.subtitle)}</div>` : ''}
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }
+
+        if (existing) {
+            existing.innerHTML = inner;
+        } else {
+            const section = document.createElement('div');
+            section.id = 'system-notifs-section';
+            section.innerHTML = inner;
+            this.resultsContainer.insertBefore(section, this.resultsContainer.firstChild);
+        }
+
+        this.resultsContainer.querySelectorAll<HTMLElement>('[data-notif-id]').forEach(el => {
+            const notif = this.activeNotifs.get(el.dataset['notifId']!);
+            if (notif?.action) el.addEventListener('click', notif.action, { once: true });
+        });
     }
 }
 

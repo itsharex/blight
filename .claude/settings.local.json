@@ -8,7 +8,13 @@
       "Bash(node:*)",
       "Bash(GOOS=windows GOARCH=amd64 go build:*)",
       "Bash(xargs wc:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

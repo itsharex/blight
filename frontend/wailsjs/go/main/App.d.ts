@@ -3,6 +3,8 @@
 import {main} from '../models';
 import {files} from '../models';
 
+export function CancelIndex():Promise<void>;
+
 export function CheckForUpdates():Promise<main.UpdateInfo>;
 
 export function ClearIndex():Promise<void>;
@@ -19,9 +21,15 @@ export function GetConfig():Promise<main.BlightConfig>;
 
 export function GetContextActions(arg1:string):Promise<Array<main.ContextAction>>;
 
+export function GetDataDir():Promise<string>;
+
 export function GetIcon(arg1:string):Promise<string>;
 
 export function GetIndexStatus():Promise<files.IndexStatus>;
+
+export function GetInstallDir():Promise<string>;
+
+export function GetStartupEnabled():Promise<boolean>;
 
 export function GetVersion():Promise<string>;
 
@@ -33,6 +41,10 @@ export function IsFirstRun():Promise<boolean>;
 
 export function IsSettingsMode():Promise<boolean>;
 
+export function OpenFolder(arg1:string):Promise<void>;
+
+export function OpenFolderPicker():Promise<string>;
+
 export function OpenSettingsWindow():Promise<void>;
 
 export function RefreshApps():Promise<void>;
@@ -41,12 +53,10 @@ export function ReindexFiles():Promise<void>;
 
 export function SaveSettings(arg1:main.BlightConfig):Promise<void>;
 
-export function GetStartupEnabled():Promise<boolean>;
-
-export function OpenFolderPicker():Promise<string>;
-
 export function Search(arg1:string):Promise<Array<main.SearchResult>>;
 
 export function ShowWindow():Promise<void>;
 
 export function ToggleWindow():Promise<void>;
+
+export function Uninstall():Promise<string>;

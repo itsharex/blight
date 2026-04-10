@@ -185,17 +185,6 @@
               </svg>
             </button>
           </div>
-          <div id="notification-indicator" class="notification-indicator">
-            <span id="notif-icon" class="notif-icon"></span>
-            <span id="notif-text" class="notif-text"></span>
-          </div>
-        </div>
-        <div id="notification-history" class="notification-history hidden">
-          <div class="notif-history-header">
-            <span>Notifications</span>
-            <button id="notif-clear" class="notif-clear">Clear</button>
-          </div>
-          <div id="notif-history-list" class="notif-history-list"></div>
         </div>
       </div>
     </div>
@@ -224,6 +213,7 @@
           <button class="settings-nav-item" data-tab="system">System</button>
           <button class="settings-nav-item" data-tab="files">File Index</button>
           <button class="settings-nav-item" data-tab="updates">Updates</button>
+          <button class="settings-nav-item" data-tab="misc">Misc</button>
         </nav>
 
         <div class="settings-body">
@@ -435,6 +425,7 @@
                 </div>
                 <div class="settings-row-control">
                   <button id="settings-reindex" class="settings-btn">Reindex</button>
+                  <button id="settings-cancel-index" class="settings-btn hidden">Cancel</button>
                   <button id="settings-clear-index" class="settings-btn settings-btn-danger">Clear</button>
                 </div>
               </div>
@@ -465,6 +456,60 @@
                 </div>
               </div>
               <div id="settings-update-status" class="settings-update-status"></div>
+
+              <div id="settings-update-install-row" class="settings-row-item hidden">
+                <div class="settings-row-info">
+                  <div class="settings-row-name" id="settings-update-version-label"></div>
+                  <div class="progress-bar" id="settings-update-progress-bar" style="display:none">
+                    <div class="progress-fill" id="settings-update-progress-fill"></div>
+                  </div>
+                  <div class="progress-text" id="settings-update-progress-text"></div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="settings-install-update" class="settings-btn settings-btn-primary">Install</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- === TAB: Misc === -->
+          <div class="settings-tab hidden" id="tab-misc">
+            <div class="settings-section-group">
+              <div class="settings-group-label">Directories</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">App Data</div>
+                  <div id="misc-data-dir" class="settings-row-desc settings-dir-path" style="font-size:11px;word-break:break-all"></div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="misc-open-data" class="settings-btn">Open</button>
+                </div>
+              </div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Install Directory</div>
+                  <div id="misc-install-dir" class="settings-row-desc settings-dir-path" style="font-size:11px;word-break:break-all"></div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="misc-open-install" class="settings-btn">Open</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section-group">
+              <div class="settings-group-label">Danger Zone</div>
+
+              <div class="settings-row-item">
+                <div class="settings-row-info">
+                  <div class="settings-row-name">Uninstall blight</div>
+                  <div class="settings-row-desc">Permanently remove blight from your system</div>
+                </div>
+                <div class="settings-row-control">
+                  <button id="misc-uninstall" class="settings-btn settings-btn-danger">Uninstall</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -474,6 +519,18 @@
       <div class="settings-footer">
         <button id="settings-cancel" class="settings-btn">Cancel</button>
         <button id="settings-save" class="settings-btn settings-btn-primary">Save Settings</button>
+      </div>
+    </div>
+
+    <!-- In-app confirm modal -->
+    <div id="confirm-modal" class="confirm-modal hidden">
+      <div class="confirm-modal-box">
+        <div class="confirm-modal-title" id="confirm-modal-title"></div>
+        <div class="confirm-modal-body" id="confirm-modal-body"></div>
+        <div class="confirm-modal-actions">
+          <button id="confirm-modal-cancel" class="settings-btn">Cancel</button>
+          <button id="confirm-modal-ok" class="settings-btn settings-btn-danger">Confirm</button>
+        </div>
       </div>
     </div>
 

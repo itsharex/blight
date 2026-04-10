@@ -94,6 +94,11 @@ func (u *Updater) CheckForUpdates(currentVersion string) (*Release, bool, error)
 
 // ApplyUpdate downloads the matching installer and starts it.
 func (u *Updater) ApplyUpdate(release *Release) error {
+	return u.ApplyUpdateWithProgress(release, nil)
+}
+
+// ApplyUpdateWithProgress downloads the installer, calling onProgress(0-100) during download, then starts it.
+func (u *Updater) ApplyUpdateWithProgress(release *Release, onProgress func(pct int)) error {
 	tmp, err := os.MkdirTemp("", "blight-update-*")
 	if err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
@@ -111,7 +116,13 @@ func (u *Updater) ApplyUpdate(release *Release) error {
 	if err != nil {
 		return fmt.Errorf("failed to create installer file: %w", err)
 	}
-	_, copyErr := io.Copy(f, resp.Body)
+
+	var src io.Reader = resp.Body
+	if onProgress != nil && resp.ContentLength > 0 {
+		src = &progressReader{r: resp.Body, total: resp.ContentLength, onProgress: onProgress}
+	}
+
+	_, copyErr := io.Copy(f, src)
 	f.Close()
 	if copyErr != nil {
 		return fmt.Errorf("download write failed: %w", copyErr)
@@ -120,6 +131,24 @@ func (u *Updater) ApplyUpdate(release *Release) error {
 	cmd := installerCommand(dest)
 	cmd.SysProcAttr = installerSysProcAttr()
 	return cmd.Start()
+}
+
+type progressReader struct {
+	r          io.Reader
+	total      int64
+	read       int64
+	onProgress func(int)
+}
+
+func (pr *progressReader) Read(p []byte) (int, error) {
+	n, err := pr.r.Read(p)
+	pr.read += int64(n)
+	pct := int(pr.read * 100 / pr.total)
+	if pct > 100 {
+		pct = 100
+	}
+	pr.onProgress(pct)
+	return n, err
 }
 
 // parseTolerant parses a version string, stripping pre-release labels if needed.

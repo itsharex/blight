@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
@@ -28,6 +29,14 @@ func explorerSelect(path string) {
 	arg, _ := syscall.UTF16PtrFromString("/select," + path)
 	explorer, _ := syscall.UTF16PtrFromString("explorer.exe")
 	procShellExecute.Call(0, 0, uintptr(unsafe.Pointer(explorer)), uintptr(unsafe.Pointer(arg)), 0, 1)
+}
+
+func blightInstallDir() string {
+	local, err := os.UserCacheDir() // returns %LocalAppData% on Windows
+	if err != nil {
+		return filepath.Join(os.Getenv("LOCALAPPDATA"), "blight")
+	}
+	return filepath.Join(local, "blight")
 }
 
 func runAsAdmin(path string) error {

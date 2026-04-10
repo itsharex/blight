@@ -13,7 +13,7 @@ import (
 type CalcResult struct {
 	Expression string
 	Result     string
-	Valid       bool
+	Valid      bool
 }
 
 func Evaluate(input string) CalcResult {
@@ -45,7 +45,7 @@ func Evaluate(input string) CalcResult {
 	return CalcResult{
 		Expression: strings.TrimSpace(input),
 		Result:     formatted,
-		Valid:       true,
+		Valid:      true,
 	}
 }
 

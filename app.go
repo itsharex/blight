@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"blight/internal/apps"
 	"blight/internal/commands"
@@ -70,8 +71,9 @@ type BlightConfig struct {
 	Theme           string `json:"theme"`           // "dark"|"light"|"system", default "dark"
 
 	// System integration
-	StartOnStartup bool `json:"startOnStartup"` // add to Windows startup, default false
-	HideNotifyIcon bool `json:"hideNotifyIcon"` // hide system tray icon, default false
+	StartOnStartup bool      `json:"startOnStartup"` // add to Windows startup, default false
+	HideNotifyIcon bool      `json:"hideNotifyIcon"`  // hide system tray icon, default false
+	LastIndexedAt  time.Time `json:"lastIndexedAt,omitempty"`
 }
 
 type App struct {
@@ -125,8 +127,15 @@ func (a *App) startup(ctx context.Context) {
 	a.fileIdx = files.NewFileIndex(a.config.IndexDirs, func(status files.IndexStatus) {
 		log.Debug("index status changed", map[string]interface{}{"state": status.State, "message": status.Message, "count": status.Count})
 		runtime.EventsEmit(ctx, "indexStatus", status)
+		if status.State == "ready" {
+			a.config.LastIndexedAt = time.Now()
+			_ = a.saveConfig()
+		}
 	})
-	a.fileIdx.Start()
+	const staleAge = 72 * time.Hour // 3 days
+	if a.fileIdx.IsStale(staleAge) {
+		a.fileIdx.Start()
+	}
 	log.Info("file indexer started")
 
 	hotkeyStr := a.config.Hotkey
@@ -222,18 +231,53 @@ func (a *App) InstallUpdate() string {
 	}
 
 	log.Info("installing update", map[string]interface{}{"version": rel.Version})
-	if err := u.ApplyUpdate(rel); err != nil {
+	err = u.ApplyUpdateWithProgress(rel, func(pct int) {
+		runtime.EventsEmit(a.ctx, "updateProgress", pct)
+	})
+	if err != nil {
 		log.Error("update failed", map[string]interface{}{"error": err.Error()})
 		return "Update failed: " + err.Error()
 	}
 
 	log.Info("update applied — NSIS installer will handle kill and relaunch")
-
-	// The NSIS installer runs silently: it does taskkill /f /im blight.exe,
-	// installs the new version, then launches blight.exe.
-	// We just return "success" so the UI can show a status message.
-	// The installer will forcefully kill us when it's ready.
 	return "success"
+}
+
+func (a *App) GetDataDir() string {
+	return a.configDir()
+}
+
+func (a *App) GetInstallDir() string {
+	return blightInstallDir()
+}
+
+func (a *App) OpenFolder(path string) {
+	shellOpen(path)
+}
+
+func (a *App) Uninstall() string {
+	dir := blightInstallDir()
+	uninst := filepath.Join(dir, "uninstall.exe")
+	if _, err := os.Stat(uninst); err != nil {
+		return "not-found:" + uninst
+	}
+	cmd := exec.Command(uninst)
+	if err := cmd.Start(); err != nil {
+		return "error:" + err.Error()
+	}
+	return "success"
+}
+
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (a *App) GetVersion() string {
@@ -385,7 +429,14 @@ func (a *App) SaveSettings(cfg BlightConfig) error {
 		}
 	}
 	if cfg.IndexDirs != nil {
+		dirsChanged := !stringSlicesEqual(a.config.IndexDirs, cfg.IndexDirs)
 		a.config.IndexDirs = cfg.IndexDirs
+		if a.fileIdx != nil {
+			a.fileIdx.UpdateDirs(cfg.IndexDirs)
+			if dirsChanged {
+				go a.fileIdx.Reindex()
+			}
+		}
 	}
 	if cfg.MaxResults > 0 {
 		a.config.MaxResults = cfg.MaxResults
@@ -768,6 +819,10 @@ func (a *App) GetIndexStatus() files.IndexStatus {
 
 func (a *App) ReindexFiles() {
 	a.fileIdx.Reindex()
+}
+
+func (a *App) CancelIndex() {
+	a.fileIdx.CancelIndex()
 }
 
 func (a *App) ClearIndex() {

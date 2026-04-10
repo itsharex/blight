@@ -4,12 +4,18 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 )
 
 func configureSettingsCommand(_ *exec.Cmd) {}
+
+func blightInstallDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".local", "share", "blight")
+}
 
 func shellOpen(path string) {
 	var cmd *exec.Cmd

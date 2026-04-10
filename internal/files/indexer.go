@@ -1,7 +1,9 @@
 package files
 
 import (
+	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +13,8 @@ import (
 
 	"blight/internal/search"
 )
+
+const maxIndexFiles = 500_000
 
 type FileEntry struct {
 	Name string
@@ -28,12 +32,14 @@ type IndexStatus struct {
 }
 
 type FileIndex struct {
-	mu         sync.RWMutex
-	files      []FileEntry
-	names      []string
-	status     atomic.Value
-	onStatus   func(IndexStatus)
-	customDirs []string // user-configured extra scan dirs (from config.IndexDirs)
+	mu          sync.RWMutex
+	files       []FileEntry
+	names       []string
+	status      atomic.Value
+	lastIndexed atomic.Value // stores time.Time
+	cancelFn    atomic.Value // stores context.CancelFunc
+	onStatus    func(IndexStatus)
+	customDirs  []string // user-configured extra scan dirs (from config.IndexDirs)
 }
 
 func NewFileIndex(customDirs []string, onStatus func(IndexStatus)) *FileIndex {
@@ -45,15 +51,44 @@ func NewFileIndex(customDirs []string, onStatus func(IndexStatus)) *FileIndex {
 	return idx
 }
 
+func (idx *FileIndex) stopCurrent() {
+	if fn, ok := idx.cancelFn.Load().(context.CancelFunc); ok && fn != nil {
+		fn()
+	}
+}
+
 func (idx *FileIndex) Start() {
-	go idx.buildIndex()
+	idx.stopCurrent()
+	ctx, cancel := context.WithCancel(context.Background())
+	idx.cancelFn.Store(cancel)
+	go idx.buildIndex(ctx)
 }
 
 func (idx *FileIndex) Reindex() {
-	go idx.buildIndex()
+	idx.stopCurrent()
+	ctx, cancel := context.WithCancel(context.Background())
+	idx.cancelFn.Store(cancel)
+	go idx.buildIndex(ctx)
+}
+
+func (idx *FileIndex) CancelIndex() {
+	idx.stopCurrent()
+	idx.setStatus(IndexStatus{State: "idle", Message: "Indexing cancelled"})
+}
+
+func (idx *FileIndex) UpdateDirs(dirs []string) {
+	idx.mu.Lock()
+	idx.customDirs = dirs
+	idx.mu.Unlock()
+}
+
+func (idx *FileIndex) IsStale(maxAge time.Duration) bool {
+	t, ok := idx.lastIndexed.Load().(time.Time)
+	return !ok || t.IsZero() || time.Since(t) > maxAge
 }
 
 func (idx *FileIndex) ClearIndex() {
+	idx.stopCurrent()
 	idx.mu.Lock()
 	idx.files = nil
 	idx.names = nil
@@ -88,12 +123,12 @@ func (idx *FileIndex) setStatus(s IndexStatus) {
 	}
 }
 
-func (idx *FileIndex) buildIndex() {
+func (idx *FileIndex) buildIndex(ctx context.Context) {
 	idx.setStatus(IndexStatus{State: "indexing", Message: "Scanning files..."})
-	idx.manualIndex()
+	idx.manualIndex(ctx)
 }
 
-func (idx *FileIndex) manualIndex() {
+func (idx *FileIndex) manualIndex(ctx context.Context) {
 	home, _ := os.UserHomeDir()
 	scanDirs := []string{
 		filepath.Join(home, "Desktop"),
@@ -116,7 +151,10 @@ func (idx *FileIndex) manualIndex() {
 	for _, d := range scanDirs {
 		seen[strings.ToLower(d)] = true
 	}
-	for _, d := range idx.customDirs {
+	idx.mu.RLock()
+	customDirs := append([]string(nil), idx.customDirs...)
+	idx.mu.RUnlock()
+	for _, d := range customDirs {
 		if d != "" && !seen[strings.ToLower(d)] && dirExists(d) {
 			scanDirs = append(scanDirs, d)
 			seen[strings.ToLower(d)] = true
@@ -138,15 +176,23 @@ func (idx *FileIndex) manualIndex() {
 	lastUpdate := time.Now()
 
 	for _, dir := range scanDirs {
+		if ctx.Err() != nil {
+			idx.setStatus(IndexStatus{State: "idle", Message: "Indexing cancelled"})
+			return
+		}
+
 		dirName := filepath.Base(dir)
-		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return filepath.SkipAll
+			}
 			if err != nil {
 				return nil
 			}
 
-			name := info.Name()
+			name := d.Name()
 
-			if info.IsDir() {
+			if d.IsDir() {
 				if shouldSkipDir(name) {
 					return filepath.SkipDir
 				}
@@ -154,7 +200,11 @@ func (idx *FileIndex) manualIndex() {
 			}
 
 			count++
-			// Throttle status updates to every 200ms to avoid UI spam
+
+			if count >= maxIndexFiles {
+				return filepath.SkipAll
+			}
+
 			if time.Since(lastUpdate) > 200*time.Millisecond {
 				lastUpdate = time.Now()
 				idx.setStatus(IndexStatus{
@@ -165,16 +215,27 @@ func (idx *FileIndex) manualIndex() {
 				})
 			}
 
+			info, err := d.Info()
+			size := int64(0)
+			if err == nil {
+				size = info.Size()
+			}
+
 			allFiles = append(allFiles, FileEntry{
 				Name: name,
 				Path: path,
 				Dir:  filepath.Dir(path),
 				Ext:  strings.ToLower(filepath.Ext(name)),
-				Size: info.Size(),
+				Size: size,
 			})
 
 			return nil
 		})
+	}
+
+	if ctx.Err() != nil {
+		idx.setStatus(IndexStatus{State: "idle", Message: "Indexing cancelled"})
+		return
 	}
 
 	names := make([]string, len(allFiles))
@@ -189,6 +250,7 @@ func (idx *FileIndex) manualIndex() {
 
 	elapsed := time.Since(start).Round(time.Millisecond)
 	msg := fmt.Sprintf("%d files indexed in %s", count, elapsed)
+	idx.lastIndexed.Store(time.Now())
 	idx.setStatus(IndexStatus{
 		State:   "ready",
 		Message: msg,

@@ -42,7 +42,7 @@
 html, body {
     height: 100%;
     overflow: hidden;
-    background: transparent;
+    background: #1c1c1e00;
     font-family: var(--font);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
@@ -93,31 +93,12 @@ body {
     height: auto;
     min-height: 0;
     justify-content: stretch;
-    border-radius: 14px;
-    border-color: var(--border);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 24px 64px rgba(0, 0, 0, 0.75);
-}
-
-.launcher.spotlight-mode .search-container {
-    margin: 10px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-secondary);
 }
 
 .launcher.spotlight-mode .divider,
 .launcher.spotlight-mode .results-container,
 .launcher.spotlight-mode .footer {
     display: none;
-}
-
-.launcher.spotlight-mode .search-shortcut {
-    display: none;
-}
-
-.launcher.spotlight-mode #search-input {
-    font-size: 19px;
 }
 
 .search-icon {
@@ -490,112 +471,10 @@ body {
 
 /* === Notification Indicator === */
 
-.notification-indicator {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    position: relative;
-}
+/* === Notification result item === */
 
-.notification-indicator:hover {
-    background: var(--bg-hover);
-    color: var(--text-secondary);
-}
-
-.notif-icon  { font-size: 12px; line-height: 1; }
-.notif-text  { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* === Notification History Popover === */
-
-.notification-history {
-    position: absolute;
-    bottom: 100%;
-    right: 8px;
-    width: 280px;
-    max-height: 240px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-context);
-    z-index: 3000;
-    margin-bottom: 4px;
-    display: flex;
-    flex-direction: column;
-    animation: contextIn 120ms ease forwards;
-}
-
-.notification-history.hidden { display: none; }
-
-.notif-history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.notif-clear {
-    background: none;
-    border: none;
-    font-size: 10px;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: var(--font);
-    transition: all var(--transition-fast);
-}
-
-.notif-clear:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-.notif-history-list {
-    overflow-y: auto;
-    flex: 1;
-    padding: 4px;
-}
-
-.notif-history-list::-webkit-scrollbar { width: 3px; }
-.notif-history-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.10);
-    border-radius: 3px;
-}
-
-.notif-history-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 11px;
-    color: var(--text-secondary);
-    transition: background var(--transition-fast);
-}
-
-.notif-history-item:hover { background: var(--bg-hover); }
-
-.notif-history-item .notif-h-icon  { flex-shrink: 0; font-size: 12px; margin-top: 1px; }
-.notif-history-item .notif-h-text  { flex: 1; min-width: 0; }
-.notif-history-item .notif-h-msg   { color: var(--text-primary); font-size: 11px; }
-.notif-history-item .notif-h-time  { color: var(--text-tertiary); font-size: 10px; margin-top: 1px; }
-
-.notif-history-empty {
-    padding: 16px;
-    text-align: center;
-    color: var(--text-tertiary);
-    font-size: 11px;
-}
+.notif-result-item .result-title { color: var(--text-secondary); font-weight: 400; }
+.notif-result-item .result-icon-fallback { background: transparent; color: var(--text-tertiary); font-size: 14px; }
 
 /* === Kbd === */
 
@@ -1355,6 +1234,86 @@ body.settings-only .settings-panel {
 /* === Settings: Wide text input === */
 
 .settings-input-wide { width: 180px; }
+
+/* === In-app confirm modal === */
+
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    animation: fadeIn 120ms ease forwards;
+}
+
+.confirm-modal.hidden { display: none; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.confirm-modal-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    min-width: 280px;
+    max-width: 380px;
+    box-shadow: var(--shadow-context);
+    animation: scaleIn 120ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.confirm-modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.confirm-modal-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* === Progress bar === */
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 10px 0 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 9999px;
+    width: 0%;
+    transition: width 200ms ease;
+}
+
+.progress-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
 
 /* === No-animations mode === */
 
