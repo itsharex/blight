@@ -132,16 +132,8 @@
       <!-- Search Bar -->
       <div class="search-container" role="search">
         <div class="search-icon" aria-hidden="true">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
+          <span class="win-icon" style="font-size:18px">&#xE721;</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -187,6 +179,7 @@
             <span id="footer-hint-actions" class="footer-hint"><kbd>Ctrl+K</kbd> Actions</span>
             <span id="footer-hint-secondary" class="footer-hint footer-hint-secondary hidden"></span>
             <button id="settings-open-btn" class="footer-settings-btn" title="Settings">
+              <span class="win-icon" style="font-size:15px">&#xE713;</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
@@ -204,25 +197,29 @@
     <div id="settings-panel" class="settings-panel hidden">
       <div class="settings-header">
         <div class="settings-header-left">
+          <span class="win-icon" style="font-size:15px;opacity:0.55">&#xE713;</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5">
             <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
           </svg>
           <span class="settings-title">Settings</span>
         </div>
-        <button id="settings-close" class="settings-close-btn" title="Close">✕</button>
+        <button id="settings-close" class="settings-close-btn" title="Close">
+          <span class="win-icon" style="font-size:12px">&#xE711;</span>
+          <span class="close-svg-fallback">✕</span>
+        </button>
       </div>
 
       <!-- Sidebar + Content layout -->
       <div class="settings-layout">
         <nav class="settings-nav">
-          <button class="settings-nav-item active" data-tab="general">General</button>
-          <button class="settings-nav-item" data-tab="search">Search</button>
-          <button class="settings-nav-item" data-tab="appearance">Appearance</button>
-          <button class="settings-nav-item" data-tab="system">System</button>
-          <button class="settings-nav-item" data-tab="files">File Index</button>
-          <button class="settings-nav-item" data-tab="aliases">Aliases</button>
-          <button class="settings-nav-item" data-tab="updates">Updates</button>
-          <button class="settings-nav-item" data-tab="misc">Misc</button>
+          <button class="settings-nav-item active" data-tab="general"><span class="nav-item-icon win-icon">&#xE713;</span>General</button>
+          <button class="settings-nav-item" data-tab="search"><span class="nav-item-icon win-icon">&#xE721;</span>Search</button>
+          <button class="settings-nav-item" data-tab="appearance"><span class="nav-item-icon win-icon">&#xE771;</span>Appearance</button>
+          <button class="settings-nav-item" data-tab="system"><span class="nav-item-icon win-icon">&#xE770;</span>System</button>
+          <button class="settings-nav-item" data-tab="files"><span class="nav-item-icon win-icon">&#xE8B7;</span>File Index</button>
+          <button class="settings-nav-item" data-tab="aliases"><span class="nav-item-icon win-icon">&#xE71B;</span>Aliases</button>
+          <button class="settings-nav-item" data-tab="updates"><span class="nav-item-icon win-icon">&#xE895;</span>Updates</button>
+          <button class="settings-nav-item" data-tab="misc"><span class="nav-item-icon win-icon">&#xE712;</span>Misc</button>
         </nav>
 
         <div class="settings-body">
@@ -474,33 +471,66 @@
 
           <!-- === TAB: Updates === -->
           <div class="settings-tab hidden" id="tab-updates">
+
             <div class="settings-section-group">
-              <div class="settings-group-label">Updates</div>
+              <div class="settings-group-label">Software Update</div>
 
-              <div class="settings-row-item">
-                <div class="settings-row-info">
-                  <div class="settings-row-name">Version</div>
-                  <div id="settings-version" class="settings-row-desc"></div>
+              <!-- Version + check row -->
+              <div class="update-version-row">
+                <div class="update-version-info">
+                  <div class="update-version-num" id="settings-version"></div>
+                  <div class="update-version-label">Currently installed</div>
                 </div>
-                <div class="settings-row-control">
-                  <fluent-button id="settings-check-updates" appearance="neutral">Check for Updates</fluent-button>
-                </div>
+                <fluent-button id="settings-check-updates" appearance="neutral">Check for Updates</fluent-button>
               </div>
-              <div id="settings-update-status" class="settings-update-status"></div>
 
-              <div id="settings-update-install-row" class="settings-row-item hidden">
-                <div class="settings-row-info">
-                  <div class="settings-row-name" id="settings-update-version-label"></div>
-                  <div class="progress-bar" id="settings-update-progress-bar" style="display:none">
-                    <div class="progress-fill" id="settings-update-progress-fill"></div>
-                  </div>
-                  <div class="progress-text" id="settings-update-progress-text"></div>
+              <!-- Status line (up-to-date / error / cooldown) -->
+              <div id="settings-update-status" class="settings-update-status"></div>
+            </div>
+
+            <!-- Update available card (hidden until an update is found) -->
+            <div id="settings-update-install-row" class="update-card hidden">
+              <div class="update-card-header">
+                <span class="update-available-badge">
+                  <span class="win-icon" style="font-size:11px">&#xE895;</span>
+                  New Version
+                </span>
+                <span class="update-card-version" id="settings-update-version-label"></span>
+              </div>
+
+              <!-- Rendered release notes -->
+              <div class="update-notes-scroll" id="settings-update-notes"></div>
+
+              <!-- Download progress (hidden until install starts) -->
+              <div id="settings-update-progress-area" style="display:none">
+                <div class="progress-bar" id="settings-update-progress-bar">
+                  <div class="progress-fill" id="settings-update-progress-fill"></div>
                 </div>
-                <div class="settings-row-control">
-                  <fluent-button id="settings-install-update" appearance="accent">Install</fluent-button>
-                </div>
+                <div class="progress-text" id="settings-update-progress-text"></div>
+              </div>
+
+              <div class="update-card-actions">
+                <fluent-button id="settings-install-update" appearance="accent">Install Update</fluent-button>
+                <a id="settings-update-github-link" class="update-release-link" target="_blank">View on GitHub ↗</a>
               </div>
             </div>
+
+            <!-- Resource links -->
+            <div class="update-resources-row">
+              <a class="update-res-link" href="https://github.com/devatblight/blight/releases" target="_blank">
+                Release History ↗
+              </a>
+              <a class="update-res-link" href="https://github.com/devatblight/blight/issues" target="_blank">
+                Report Issue ↗
+              </a>
+              <a class="update-res-github" href="https://github.com/devatblight/blight" target="_blank" title="GitHub">
+                <span class="win-icon">&#xE71B;</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                </svg>
+              </a>
+            </div>
+
           </div>
 
           <!-- === TAB: Misc === -->

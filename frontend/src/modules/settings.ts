@@ -19,6 +19,7 @@ import {
     SaveAlias,
     DeleteAlias,
 } from '../../wailsjs/go/main/App';
+import { marked, Renderer } from 'marked';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { main, files } from '../../wailsjs/go/models';
 import { escapeHtml, inputEl, selectEl } from './utils';
@@ -275,8 +276,8 @@ export class Settings {
                     const update = await CheckForUpdates();
                     if (update && update.available) {
                         if (updateStatus) {
-                            updateStatus.textContent = `v${update.version} available — click badge in footer to install`;
-                            updateStatus.className = 'settings-update-status success';
+                            updateStatus.textContent = '';
+                            updateStatus.className = 'settings-update-status';
                         }
                         this.deps.onUpdateAvailable(update);
                     } else if (update && update.error) {
@@ -286,8 +287,9 @@ export class Settings {
                         }
                     } else {
                         if (updateStatus) {
-                            updateStatus.textContent = "You're on the latest version";
-                            updateStatus.className = 'settings-update-status';
+                            updateStatus.innerHTML =
+                                '<span class="update-status-ok">&#x2713; You\'re on the latest version</span>';
+                            updateStatus.className = 'settings-update-status success';
                         }
                     }
                 } catch (e) {
@@ -390,15 +392,45 @@ export class Settings {
         if (el) el.textContent = msg;
     }
 
-    showUpdateInstallRow(version: string, onInstall: () => void): void {
+    showUpdateInstallRow(update: main.UpdateInfo, onInstall: () => void): void {
         const row = document.getElementById('settings-update-install-row');
         const label = document.getElementById('settings-update-version-label');
+        const notesEl = document.getElementById('settings-update-notes');
+        const githubLink = document.getElementById(
+            'settings-update-github-link'
+        ) as HTMLAnchorElement | null;
         const installBtn = document.getElementById(
             'settings-install-update'
         ) as HTMLButtonElement | null;
+
         if (row) row.classList.remove('hidden');
-        if (label) label.textContent = `v${version} available`;
+        if (label) label.textContent = `v${update.version}`;
+        if (notesEl) notesEl.innerHTML = this._renderReleaseNotes(update.notes);
+        if (githubLink) {
+            githubLink.href = `https://github.com/devatblight/blight/releases/tag/v${update.version}`;
+        }
         if (installBtn) installBtn.onclick = onInstall;
+    }
+
+    // Converts GitHub release Markdown to HTML using the `marked` library (GFM).
+    // Links are forced to open in a new tab (Wails intercepts target="_blank").
+    private _renderReleaseNotes(raw: string): string {
+        if (!raw || !raw.trim()) return '<span class="rn-empty">No release notes available.</span>';
+
+        const renderer = new Renderer();
+
+        // Open all links in the system browser via Wails target="_blank" interception
+        renderer.link = ({ href, title, text }) => {
+            const safeHref = (href || '').replace(/"/g, '&quot;');
+            const titleAttr = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
+            return `<a href="${safeHref}"${titleAttr} target="_blank" class="rn-link">${text}</a>`;
+        };
+
+        return marked.parse(raw, {
+            renderer,
+            gfm: true,
+            breaks: true,
+        }) as string;
     }
 
     private _renderIndexDirs(): void {

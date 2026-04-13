@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -732,53 +733,64 @@ func (a *App) Execute(id string) string {
 	return "not found"
 }
 
+// icon returns a Segoe MDL2/Fluent glyph on Windows and a plain emoji on other platforms.
+// Segoe PUA codepoints are meaningless outside Windows, so we fall back to emoji elsewhere.
+func icon(winGlyph, fallback string) string {
+	if goruntime.GOOS == "windows" {
+		return winGlyph
+	}
+	return fallback
+}
+
 func (a *App) GetContextActions(id string) []ContextAction {
 	switch {
 	case strings.HasPrefix(id, "dir-open:"):
 		return []ContextAction{
-			{ID: "open", Label: "Open", Icon: "▶"},
-			{ID: "terminal", Label: "Open in Terminal", Icon: "⌨"},
-			{ID: "copy-path", Label: "Copy Path", Icon: "📋"},
+			{ID: "open", Label: "Open", Icon: icon("\uE768", "▶")},
+			{ID: "terminal", Label: "Open in Terminal", Icon: icon("\uE756", "⌨")},
+			{ID: "copy-path", Label: "Copy Path", Icon: icon("\uE8C8", "📋")},
 		}
 	case strings.HasPrefix(id, "file-open:"):
 		return []ContextAction{
-			{ID: "open", Label: "Open", Icon: "▶"},
-			{ID: "explorer", Label: "Show in Explorer", Icon: "📂"},
-			{ID: "copy-path", Label: "Copy Path", Icon: "📋"},
-			{ID: "copy-name", Label: "Copy Name", Icon: "📝"},
+			{ID: "open", Label: "Open", Icon: icon("\uE768", "▶")},
+			{ID: "explorer", Label: "Show in Explorer", Icon: icon("\uE8B7", "📂")},
+			{ID: "copy-path", Label: "Copy Path", Icon: icon("\uE8C8", "📋")},
+			{ID: "copy-name", Label: "Copy Name", Icon: icon("\uE70F", "📝")},
 		}
 	case strings.HasPrefix(id, "clip-"):
 		return []ContextAction{
-			{ID: "copy", Label: "Copy", Icon: "📋"},
-			{ID: "delete", Label: "Delete", Icon: "🗑️"},
+			{ID: "copy", Label: "Copy", Icon: icon("\uE8C8", "📋")},
+			{ID: "delete", Label: "Delete", Icon: icon("\uE74D", "🗑️")},
 		}
 	case strings.HasPrefix(id, "sys-"):
 		return []ContextAction{
-			{ID: "run", Label: "Run", Icon: "▶"},
+			{ID: "run", Label: "Run", Icon: icon("\uE768", "▶")},
 		}
 	case strings.HasPrefix(id, "alias:"):
 		return []ContextAction{
-			{ID: "open", Label: "Use", Icon: "▶"},
-			{ID: "copy", Label: "Copy Expansion", Icon: "📋"},
-			{ID: "delete-alias", Label: "Delete Alias", Icon: "🗑️"},
+			{ID: "open", Label: "Use", Icon: icon("\uE768", "▶")},
+			{ID: "copy", Label: "Copy Expansion", Icon: icon("\uE8C8", "📋")},
+			{ID: "delete-alias", Label: "Delete Alias", Icon: icon("\uE74D", "🗑️")},
 		}
 	case id == "calc-result" || id == "no-results" || strings.HasPrefix(id, "web-search:"):
 		return []ContextAction{}
 	default:
-		// App — dynamic pin label
+		// App — dynamic pin label and icon
 		pinLabel := "Pin to Top"
+		pinIcon := icon("\uE718", "📌")
 		for _, p := range a.config.PinnedItems {
 			if p == id {
 				pinLabel = "Unpin from Top"
+				pinIcon = icon("\uE77A", "📌")
 				break
 			}
 		}
 		return []ContextAction{
-			{ID: "open", Label: "Open", Icon: "▶"},
-			{ID: "admin", Label: "Run as Administrator", Icon: "🛡️"},
-			{ID: "explorer", Label: "Show in Explorer", Icon: "📂"},
-			{ID: "copy-path", Label: "Copy Path", Icon: "📋"},
-			{ID: "pin", Label: pinLabel, Icon: "📌"},
+			{ID: "open", Label: "Open", Icon: icon("\uE768", "▶")},
+			{ID: "admin", Label: "Run as Administrator", Icon: icon("\uE7EF", "🛡️")},
+			{ID: "explorer", Label: "Show in Explorer", Icon: icon("\uE8B7", "📂")},
+			{ID: "copy-path", Label: "Copy Path", Icon: icon("\uE8C8", "📋")},
+			{ID: "pin", Label: pinLabel, Icon: pinIcon},
 		}
 	}
 }

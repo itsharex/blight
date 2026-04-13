@@ -1,4 +1,23 @@
-export function getFallbackIcon(category: string): string {
+// Segoe Fluent Icons / Segoe MDL2 Assets glyph map — Windows only (PUA codepoints).
+// On non-Windows these are invisible (.win-icon is display:none via CSS).
+const CATEGORY_ICONS: Record<string, { glyph: string; color: string }> = {
+    pinned: { glyph: '\uE718', color: 'rgba(92,154,255,0.75)' }, // Pin
+    applications: { glyph: '\uE737', color: 'rgba(92,154,255,0.70)' }, // Apps
+    recent: { glyph: '\uE81C', color: 'rgba(92,154,255,0.65)' }, // History
+    suggested: { glyph: '\uE737', color: 'rgba(92,154,255,0.65)' }, // Apps
+    folders: { glyph: '\uE8B7', color: 'rgba(255,190,60,0.80)' }, // OpenFolderHorizontal
+    files: { glyph: '\uE8A5', color: 'rgba(255,255,255,0.55)' }, // Document
+    web: { glyph: '\uE774', color: 'rgba(92,154,255,0.70)' }, // Globe2
+    system: { glyph: '\uE770', color: 'rgba(255,255,255,0.50)' }, // System/PC
+    calculator: { glyph: '\uE8EF', color: 'rgba(92,154,255,0.70)' }, // Calculator
+    clipboard: { glyph: '\uE8C8', color: 'rgba(255,255,255,0.50)' }, // Copy/Clipboard
+    aliases: { glyph: '\uE71B', color: 'rgba(92,154,255,0.70)' }, // Link
+};
+
+const DEFAULT_ICON = { glyph: '\uE8D5', color: 'rgba(255,255,255,0.35)' }; // BulletedList
+
+// SVG fallbacks for non-Windows (macOS / Linux).
+function getSvgFallback(category: string): string {
     const c = (category || '').toLowerCase();
     if (c === 'pinned' || c === 'applications' || c === 'recent' || c === 'suggested') {
         return `<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -68,4 +87,15 @@ export function getFallbackIcon(category: string): string {
         <circle cx="12" cy="12" r="9" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
         <circle cx="12" cy="12" r="3" fill="rgba(255,255,255,0.15)"/>
     </svg>`;
+}
+
+// Returns the icon HTML for a result item fallback.
+// On Windows: Segoe glyph (hidden on non-Windows via CSS).
+// On non-Windows: SVG (hidden on Windows via CSS).
+// Both are included; CSS at [data-os] controls which is visible.
+export function getFallbackIcon(category: string): string {
+    const { glyph, color } = CATEGORY_ICONS[(category || '').toLowerCase()] ?? DEFAULT_ICON;
+    const winIcon = `<span class="win-icon" style="color:${color}" aria-hidden="true">${glyph}</span>`;
+    const svgIcon = getSvgFallback(category);
+    return winIcon + svgIcon;
 }

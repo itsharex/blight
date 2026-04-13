@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     IsFirstRun,
     IsSettingsMode,
@@ -239,7 +240,7 @@ class Blight {
             action: () => this.installUpdate(update),
         });
         this.systemNotifs.refresh();
-        this.settings.showUpdateInstallRow(update.version, () => this.installUpdate(update));
+        this.settings.showUpdateInstallRow(update, () => this.installUpdate(update));
     }
 
     async installUpdate(update: main.UpdateInfo): Promise<void> {
@@ -252,11 +253,13 @@ class Blight {
                 this.settings.activateTab('updates');
                 this.settingsPanelEl.classList.remove('hidden');
 
+                const progressArea = document.getElementById('settings-update-progress-area');
                 const bar = document.getElementById('settings-update-progress-bar');
                 const fill = document.getElementById(
                     'settings-update-progress-fill'
                 ) as HTMLElement | null;
                 const text = document.getElementById('settings-update-progress-text');
+                if (progressArea) progressArea.style.display = 'block';
                 if (bar) bar.style.display = 'block';
                 if (text) text.textContent = 'Downloading…';
 
