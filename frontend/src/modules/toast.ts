@@ -13,12 +13,12 @@ export class Toast {
         this.toastEl = toastEl;
     }
 
-    show(message: string, detail = '', type: ToastType = 'info'): void {
+    show(message: string, _detail = '', type: ToastType = 'info'): void {
         const icons: Record<ToastType, string> = {
             success: '✓',
-            error:   '✕',
+            error: '✕',
             warning: '⚠',
-            info:    '•',
+            info: '•',
         };
 
         this.brandEl.classList.add('hidden-by-toast');

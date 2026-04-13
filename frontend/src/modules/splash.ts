@@ -28,8 +28,10 @@ export class Splash {
         document.getElementById('splash-skip')?.addEventListener('click', () => this._complete());
         document.getElementById('splash-go')?.addEventListener('click', () => this._complete());
 
-        document.querySelectorAll<HTMLElement>('.splash-dot').forEach(dot => {
-            dot.addEventListener('click', () => this._goToSlide(parseInt(dot.dataset['dot'] ?? '0', 10)));
+        document.querySelectorAll<HTMLElement>('.splash-dot').forEach((dot) => {
+            dot.addEventListener('click', () =>
+                this._goToSlide(parseInt(dot.dataset['dot'] ?? '0', 10))
+            );
         });
     }
 

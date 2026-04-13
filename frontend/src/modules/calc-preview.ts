@@ -6,16 +6,22 @@ export class CalcPreview {
     }
 
     update(query: string): void {
-        const calcRegex = /^[\d\s\+\-\*\/\(\)\.]+$/;
-        if (calcRegex.test(query) && /[\+\-\*\/]/.test(query)) {
+        const calcRegex = /^[\d\s+\-*/().]+$/;
+        if (calcRegex.test(query) && /[+\-*/]/.test(query)) {
             try {
                 const result = Function('"use strict"; return (' + query + ')')();
                 if (typeof result === 'number' && isFinite(result)) {
-                    this.el.textContent = '= ' + (Number.isInteger(result) ? result.toString() : result.toFixed(6).replace(/\.?0+$/, ''));
+                    this.el.textContent =
+                        '= ' +
+                        (Number.isInteger(result)
+                            ? result.toString()
+                            : result.toFixed(6).replace(/\.?0+$/, ''));
                     this.el.setAttribute('aria-hidden', 'false');
                     return;
                 }
-            } catch (_) { /* ignore */ }
+            } catch {
+                /* ignore */
+            }
         }
         this.clear();
     }

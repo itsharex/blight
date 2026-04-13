@@ -9,7 +9,11 @@ export class SearchHistory {
     private onSelect: (query: string) => void;
     private history: string[];
 
-    constructor(containerEl: HTMLElement, searchInputEl: HTMLInputElement, onSelect: (query: string) => void) {
+    constructor(
+        containerEl: HTMLElement,
+        searchInputEl: HTMLInputElement,
+        onSelect: (query: string) => void
+    ) {
         this.containerEl = containerEl;
         this.searchInputEl = searchInputEl;
         this.onSelect = onSelect;
@@ -18,7 +22,7 @@ export class SearchHistory {
 
     add(query: string): void {
         if (!query || query.length < 2) return;
-        this.history = [query, ...this.history.filter(q => q !== query)].slice(0, MAX_HISTORY);
+        this.history = [query, ...this.history.filter((q) => q !== query)].slice(0, MAX_HISTORY);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.history));
     }
 
@@ -29,18 +33,24 @@ export class SearchHistory {
         }
         this.containerEl.innerHTML =
             `<div class="history-header">Recent</div>` +
-            this.history.map((q, i) => `
+            this.history
+                .map(
+                    (q, i) => `
                 <div class="history-item" data-index="${i}" role="option">
                     <span class="history-item-icon">↺</span>
                     <span class="history-item-text">${escapeHtml(q)}</span>
                     <span class="history-item-remove" data-remove="${i}" title="Remove">✕</span>
                 </div>
-            `).join('');
+            `
+                )
+                .join('');
         this.containerEl.classList.remove('hidden');
 
-        this.containerEl.querySelectorAll<HTMLElement>('.history-item').forEach(item => {
+        this.containerEl.querySelectorAll<HTMLElement>('.history-item').forEach((item) => {
             item.addEventListener('mousedown', (e) => {
-                const remove = (e.target as HTMLElement).closest('[data-remove]') as HTMLElement | null;
+                const remove = (e.target as HTMLElement).closest(
+                    '[data-remove]'
+                ) as HTMLElement | null;
                 if (remove) {
                     e.preventDefault();
                     const idx = parseInt(remove.dataset['remove'] ?? '0', 10);

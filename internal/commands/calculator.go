@@ -35,12 +35,6 @@ func Evaluate(input string) CalcResult {
 		return CalcResult{Valid: false}
 	}
 
-	// Check for hex/bin output requests
-	origLower := strings.ToLower(strings.TrimSpace(input))
-	if strings.HasPrefix(origLower, "=") {
-		origLower = strings.TrimSpace(origLower[1:])
-	}
-
 	formatted := formatNumber(result)
 	return CalcResult{
 		Expression: strings.TrimSpace(input),

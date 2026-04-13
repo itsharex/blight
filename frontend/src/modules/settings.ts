@@ -1,11 +1,23 @@
 import {
-    GetConfig, SaveSettings, GetVersion, GetStartupEnabled,
-    GetDataDir, GetInstallDir, OpenFolder, OpenFolderPicker,
-    ReindexFiles, ClearIndex, CancelIndex,
+    GetConfig,
+    SaveSettings,
+    GetVersion,
+    GetStartupEnabled,
+    GetDataDir,
+    GetInstallDir,
+    OpenFolder,
+    OpenFolderPicker,
+    ReindexFiles,
+    ClearIndex,
+    CancelIndex,
     CheckForUpdates,
-    Uninstall, CloseSettings,
-    ExportSettings, ImportSettings,
-    GetAliases, SaveAlias, DeleteAlias,
+    Uninstall,
+    CloseSettings,
+    ExportSettings,
+    ImportSettings,
+    GetAliases,
+    SaveAlias,
+    DeleteAlias,
 } from '../../wailsjs/go/main/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { main, files } from '../../wailsjs/go/models';
@@ -29,11 +41,6 @@ export class Settings {
     private currentIndexDirs: string[] = [];
     private lastUpdateCheck = 0;
 
-    // Hotkey recorder state
-    private _hkPending = '';
-    private _hkKeydownFn: ((e: KeyboardEvent) => void) | null = null;
-    private _hkKeyupFn: ((e: KeyboardEvent) => void) | null = null;
-
     constructor(panelEl: HTMLElement, deps: SettingsDeps) {
         this.panelEl = panelEl;
         this.deps = deps;
@@ -46,14 +53,16 @@ export class Settings {
     async open(): Promise<void> {
         this.panelEl.classList.remove('hidden');
         this.panelEl.style.animation = 'none';
-        this.panelEl.offsetHeight; // force reflow
+        void this.panelEl.offsetHeight; // force reflow
         this.panelEl.style.animation = '';
 
         this.activateTab('general');
 
         try {
             const [config, version, startupEnabled] = await Promise.all([
-                GetConfig(), GetVersion(), GetStartupEnabled()
+                GetConfig(),
+                GetVersion(),
+                GetStartupEnabled(),
             ]);
 
             // General tab
@@ -108,14 +117,18 @@ export class Settings {
             if (versionEl) versionEl.textContent = `v${version}`;
 
             // Misc tab
-            GetDataDir().then(d => {
-                const el = document.getElementById('misc-data-dir');
-                if (el) el.textContent = d;
-            }).catch(() => {});
-            GetInstallDir().then(d => {
-                const el = document.getElementById('misc-install-dir');
-                if (el) el.textContent = d;
-            }).catch(() => {});
+            GetDataDir()
+                .then((d) => {
+                    const el = document.getElementById('misc-data-dir');
+                    if (el) el.textContent = d;
+                })
+                .catch(() => {});
+            GetInstallDir()
+                .then((d) => {
+                    const el = document.getElementById('misc-install-dir');
+                    if (el) el.textContent = d;
+                })
+                .catch(() => {});
 
             this.currentIndexDirs = config.indexDirs || [];
             this._renderIndexDirs();
@@ -137,23 +150,22 @@ export class Settings {
     }
 
     activateTab(name: string): void {
-        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach(btn => {
+        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach((btn) => {
             const isActive = btn.dataset['tab'] === name;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-selected', String(isActive));
         });
-        document.querySelectorAll('.settings-tab').forEach(tab => {
+        document.querySelectorAll('.settings-tab').forEach((tab) => {
             tab.classList.toggle('hidden', tab.id !== `tab-${name}`);
         });
     }
 
     bind(): void {
-        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach(btn => {
+        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach((btn) => {
             btn.addEventListener('click', () => this.activateTab(btn.dataset['tab'] ?? ''));
         });
         this._bindTabKeyNav();
         this._bindAliasAdd();
-        this._bindHotkeyBadge();
 
         document.getElementById('settings-close')?.addEventListener('click', () => this.close());
         document.getElementById('settings-cancel')?.addEventListener('click', () => this.close());
@@ -163,7 +175,9 @@ export class Settings {
             saveBtn.addEventListener('click', async () => {
                 const cfg = {
                     firstRun: false,
-                    hotkey: document.getElementById('settings-hotkey-display')?.textContent || 'Alt+Space',
+                    hotkey:
+                        document.getElementById('settings-hotkey-display')?.textContent ||
+                        'Alt+Space',
                     maxClipboard: parseInt(inputEl('settings-clipboard-size')?.value || '50', 10),
                     lastQueryMode: selectEl('settings-last-query-mode')?.value || 'clear',
                     hideWhenDeactivated: inputEl('settings-hide-deactivated')?.checked ?? true,
@@ -202,7 +216,9 @@ export class Settings {
             if (statusEl) statusEl.textContent = 'Reindexing…';
         });
 
-        document.getElementById('settings-cancel-index')?.addEventListener('click', () => CancelIndex());
+        document
+            .getElementById('settings-cancel-index')
+            ?.addEventListener('click', () => CancelIndex());
 
         document.getElementById('settings-clear-index')?.addEventListener('click', async () => {
             await ClearIndex();
@@ -222,15 +238,19 @@ export class Settings {
         EventsOn('indexStatus', (status: files.IndexStatus) => {
             const statusEl = document.getElementById('settings-index-status');
             if (statusEl) statusEl.textContent = status.message;
-            const reindexBtn = document.getElementById('settings-reindex') as HTMLElement & { disabled?: boolean } | null;
+            const reindexBtn = document.getElementById(
+                'settings-reindex'
+            ) as HTMLButtonElement | null;
             const cancelBtn = document.getElementById('settings-cancel-index');
             const indexing = status.state === 'indexing';
-            if (reindexBtn) reindexBtn.toggleAttribute('disabled', indexing);
+            if (reindexBtn) reindexBtn.disabled = indexing;
             if (cancelBtn) cancelBtn.classList.toggle('hidden', !indexing);
         });
 
         // Updates tab
-        const checkUpdatesBtn = document.getElementById('settings-check-updates') as HTMLElement & { disabled?: boolean } | null;
+        const checkUpdatesBtn = document.getElementById(
+            'settings-check-updates'
+        ) as HTMLButtonElement | null;
         const updateStatus = document.getElementById('settings-update-status');
         if (checkUpdatesBtn) {
             checkUpdatesBtn.addEventListener('click', async () => {
@@ -245,9 +265,12 @@ export class Settings {
                     return;
                 }
                 this.deps.setLastUpdateCheck(Date.now());
-                checkUpdatesBtn.toggleAttribute('disabled', true);
+                checkUpdatesBtn.disabled = true;
                 checkUpdatesBtn.textContent = 'Checking…';
-                if (updateStatus) { updateStatus.textContent = ''; updateStatus.className = 'settings-update-status'; }
+                if (updateStatus) {
+                    updateStatus.textContent = '';
+                    updateStatus.className = 'settings-update-status';
+                }
                 try {
                     const update = await CheckForUpdates();
                     if (update && update.available) {
@@ -263,7 +286,7 @@ export class Settings {
                         }
                     } else {
                         if (updateStatus) {
-                            updateStatus.textContent = 'You\'re on the latest version';
+                            updateStatus.textContent = "You're on the latest version";
                             updateStatus.className = 'settings-update-status';
                         }
                     }
@@ -273,7 +296,7 @@ export class Settings {
                         updateStatus.className = 'settings-update-status error';
                     }
                 } finally {
-                    checkUpdatesBtn.toggleAttribute('disabled', false);
+                    checkUpdatesBtn.disabled = false;
                     checkUpdatesBtn.textContent = 'Check for Updates';
                 }
             });
@@ -297,7 +320,13 @@ export class Settings {
                 async () => {
                     const res = await Uninstall();
                     if (res !== 'success') {
-                        this.deps.showToast('Uninstall failed', res.replace('not-found:', 'Uninstaller not found: ').replace('error:', ''), 'error');
+                        this.deps.showToast(
+                            'Uninstall failed',
+                            res
+                                .replace('not-found:', 'Uninstaller not found: ')
+                                .replace('error:', ''),
+                            'error'
+                        );
                     }
                 }
             );
@@ -323,7 +352,9 @@ export class Settings {
             });
         }
 
-        const importFileInput = document.getElementById('misc-import-file') as HTMLInputElement | null;
+        const importFileInput = document.getElementById(
+            'misc-import-file'
+        ) as HTMLInputElement | null;
         const importBtn = document.getElementById('misc-import-settings');
         if (importBtn && importFileInput) {
             importBtn.addEventListener('click', () => importFileInput.click());
@@ -339,7 +370,11 @@ export class Settings {
                         false,
                         async () => {
                             await ImportSettings(text);
-                            this.deps.showToast('Settings imported', 'Reload blight to apply fully', 'success');
+                            this.deps.showToast(
+                                'Settings imported',
+                                'Reload blight to apply fully',
+                                'success'
+                            );
                         }
                     );
                 } catch (e) {
@@ -358,7 +393,9 @@ export class Settings {
     showUpdateInstallRow(version: string, onInstall: () => void): void {
         const row = document.getElementById('settings-update-install-row');
         const label = document.getElementById('settings-update-version-label');
-        const installBtn = document.getElementById('settings-install-update') as HTMLElement | null;
+        const installBtn = document.getElementById(
+            'settings-install-update'
+        ) as HTMLButtonElement | null;
         if (row) row.classList.remove('hidden');
         if (label) label.textContent = `v${version} available`;
         if (installBtn) installBtn.onclick = onInstall;
@@ -369,16 +406,21 @@ export class Settings {
         if (!container) return;
         const dirs = this.currentIndexDirs;
         if (dirs.length === 0) {
-            container.innerHTML = '<div style="font-size:11px;color:var(--text-tertiary)">No extra directories added</div>';
+            container.innerHTML =
+                '<div style="font-size:11px;color:var(--text-tertiary)">No extra directories added</div>';
             return;
         }
-        container.innerHTML = dirs.map((d, i) => `
+        container.innerHTML = dirs
+            .map(
+                (d, i) => `
             <div class="settings-dir-item">
                 <span class="settings-dir-path">${escapeHtml(d)}</span>
                 <button class="settings-dir-remove" data-index="${i}">✕</button>
             </div>
-        `).join('');
-        container.querySelectorAll<HTMLElement>('.settings-dir-remove').forEach(btn => {
+        `
+            )
+            .join('');
+        container.querySelectorAll<HTMLElement>('.settings-dir-remove').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset['index'] ?? '0', 10);
                 this.currentIndexDirs = this.currentIndexDirs.filter((_, i) => i !== idx);
@@ -391,7 +433,9 @@ export class Settings {
         try {
             const aliases = await GetAliases();
             this._renderAliases(aliases);
-        } catch (_) { /* non-critical */ }
+        } catch {
+            /* non-critical */
+        }
     }
 
     private _renderAliases(aliases: Record<string, string>): void {
@@ -399,18 +443,23 @@ export class Settings {
         if (!list) return;
         const entries = Object.entries(aliases);
         if (entries.length === 0) {
-            list.innerHTML = '<div style="font-size:11px;color:var(--text-tertiary);padding:8px 0">No aliases yet. Add one above.</div>';
+            list.innerHTML =
+                '<div style="font-size:11px;color:var(--text-tertiary);padding:8px 0">No aliases yet. Add one above.</div>';
             return;
         }
-        list.innerHTML = entries.map(([trigger, expansion]) => `
+        list.innerHTML = entries
+            .map(
+                ([trigger, expansion]) => `
             <div class="alias-item">
                 <span class="alias-trigger">${escapeHtml(trigger)}</span>
                 <span class="alias-arrow">→</span>
                 <span class="alias-expansion" title="${escapeHtml(expansion)}">${escapeHtml(expansion)}</span>
                 <button class="alias-remove" data-trigger="${escapeHtml(trigger)}" title="Delete alias">✕</button>
             </div>
-        `).join('');
-        list.querySelectorAll<HTMLElement>('.alias-remove').forEach(btn => {
+        `
+            )
+            .join('');
+        list.querySelectorAll<HTMLElement>('.alias-remove').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const trigger = btn.dataset['trigger'] ?? '';
                 await DeleteAlias(trigger);
@@ -422,8 +471,12 @@ export class Settings {
 
     private _bindAliasAdd(): void {
         const addBtn = document.getElementById('alias-add-btn');
-        const triggerInput = document.getElementById('alias-trigger-input') as HTMLInputElement | null;
-        const expansionInput = document.getElementById('alias-expansion-input') as HTMLInputElement | null;
+        const triggerInput = document.getElementById(
+            'alias-trigger-input'
+        ) as HTMLInputElement | null;
+        const expansionInput = document.getElementById(
+            'alias-expansion-input'
+        ) as HTMLInputElement | null;
         if (!addBtn || !triggerInput || !expansionInput) return;
 
         const doAdd = async () => {
@@ -450,159 +503,12 @@ export class Settings {
         });
     }
 
-    private _bindHotkeyBadge(): void {
-        document.getElementById('settings-hotkey-edit')?.addEventListener('click', () => {
-            const current = document.getElementById('settings-hotkey-display')?.textContent || 'Alt+Space';
-            this._openHotkeyRecorder(current);
-        });
-    }
-
-    private _openHotkeyRecorder(currentHotkey: string): void {
-        const modal = document.getElementById('hotkey-modal')!;
-        const canvas = document.getElementById('hotkey-canvas')!;
-        const saveBtn = document.getElementById('hotkey-save-btn') as HTMLButtonElement;
-        const clearBtn = document.getElementById('hotkey-clear-btn')!;
-        const cancelBtn = document.getElementById('hotkey-cancel-btn')!;
-        const currentValEl = document.getElementById('hotkey-modal-current-val')!;
-
-        currentValEl.textContent = currentHotkey;
-        this._hkPending = '';
-        saveBtn.disabled = true;
-        this._renderHkCanvas(null, false);
-
-        modal.classList.remove('hidden');
-        canvas.classList.add('hk-active');
-        canvas.focus();
-
-        const close = () => {
-            modal.classList.add('hidden');
-            canvas.classList.remove('hk-active');
-            if (this._hkKeydownFn) document.removeEventListener('keydown', this._hkKeydownFn, true);
-            if (this._hkKeyupFn) document.removeEventListener('keyup', this._hkKeyupFn, true);
-            this._hkKeydownFn = null;
-            this._hkKeyupFn = null;
-        };
-
-        // Close on overlay click
-        modal.onclick = (e: MouseEvent) => { if (e.target === modal) close(); };
-        cancelBtn.onclick = () => close();
-
-        clearBtn.onclick = () => {
-            this._hkPending = '';
-            saveBtn.disabled = true;
-            this._renderHkCanvas(null, false);
-            canvas.focus();
-        };
-
-        saveBtn.onclick = () => {
-            if (this._hkPending) {
-                const display = document.getElementById('settings-hotkey-display')!;
-                display.textContent = this._hkPending;
-                close();
-            }
-        };
-
-        this._hkKeydownFn = (e: KeyboardEvent) => {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-
-            const mods: string[] = [];
-            if (e.ctrlKey) mods.push('Ctrl');
-            if (e.altKey) mods.push('Alt');
-            if (e.shiftKey) mods.push('Shift');
-            if (e.metaKey) mods.push('Win');
-
-            const isModKey = ['Control', 'Alt', 'Shift', 'Meta', 'AltGraph', 'OS'].includes(e.key);
-
-            // Escape with no modifiers cancels the dialog
-            if (e.key === 'Escape' && mods.length === 0) { close(); return; }
-
-            if (isModKey) {
-                // Only modifiers held – show live preview (no main key yet)
-                this._renderHkCanvas(mods, false);
-            } else {
-                const mainKey = this._mapHkKey(e.key);
-                if (mainKey && mods.length > 0) {
-                    // Valid combo: at least one modifier + main key
-                    this._hkPending = [...mods, mainKey].join('+');
-                    saveBtn.disabled = false;
-                    this._renderHkCanvas([...mods, mainKey], true);
-                } else if (mainKey) {
-                    // No modifier – show but mark invalid (no save)
-                    this._renderHkCanvas([mainKey], false);
-                }
-            }
-        };
-
-        this._hkKeyupFn = (e: KeyboardEvent) => {
-            e.preventDefault();
-            // After releasing, keep showing the last confirmed combo (or clear live mods)
-            if (this._hkPending) {
-                this._renderHkCanvas(this._hkPending.split('+'), true);
-            } else {
-                const mods: string[] = [];
-                if (e.ctrlKey) mods.push('Ctrl');
-                if (e.altKey) mods.push('Alt');
-                if (e.shiftKey) mods.push('Shift');
-                if (e.metaKey) mods.push('Win');
-                this._renderHkCanvas(mods.length > 0 ? mods : null, false);
-            }
-        };
-
-        document.addEventListener('keydown', this._hkKeydownFn, true);
-        document.addEventListener('keyup', this._hkKeyupFn, true);
-    }
-
-    /** Render key chips in the hotkey canvas.
-     *  parts=null → show placeholder.
-     *  hasMain=true → last chip styled as the main key (accent), rest as modifiers.
-     *  hasMain=false → all chips muted (live modifier preview, not yet a valid combo).
-     */
-    private _renderHkCanvas(parts: string[] | null, hasMain: boolean): void {
-        const placeholder = document.getElementById('hotkey-placeholder')!;
-        const chipsRow = document.getElementById('hotkey-chips-row') as HTMLElement;
-
-        if (!parts || parts.length === 0) {
-            placeholder.style.display = '';
-            chipsRow.style.display = 'none';
-            chipsRow.innerHTML = '';
-            return;
-        }
-
-        placeholder.style.display = 'none';
-        chipsRow.style.display = 'flex';
-        chipsRow.style.opacity = hasMain ? '1' : '0.45';
-
-        const html = parts.map((key, i) => {
-            const isMain = hasMain && i === parts.length - 1;
-            const cls = isMain ? 'hotkey-chip hotkey-chip-main' : 'hotkey-chip';
-            const sep = i < parts.length - 1 ? '<div class="hotkey-plus">+</div>' : '';
-            return `<div class="${cls}">${escapeHtml(key)}</div>${sep}`;
-        }).join('');
-
-        chipsRow.innerHTML = html;
-    }
-
-    /** Map a browser KeyboardEvent.key value to the string format ParseHotkey expects. */
-    private _mapHkKey(key: string): string {
-        if (key === ' ') return 'Space';
-        if (key === 'Tab') return 'Tab';
-        if (key === 'Enter') return 'Enter';
-        if (key === 'Backspace') return 'Backspace';
-        if (key === 'Delete') return 'Delete';
-        if (key === 'Escape') return 'Escape';
-        if (/^F([1-9]|1[0-2])$/.test(key)) return key;
-        if (/^[a-zA-Z]$/.test(key)) return key.toUpperCase();
-        if (/^[0-9]$/.test(key)) return key;
-        return '';
-    }
-
     private _bindTabKeyNav(): void {
         const nav = document.querySelector<HTMLElement>('.settings-nav');
         if (!nav) return;
         nav.addEventListener('keydown', (e) => {
             const items = Array.from(nav.querySelectorAll<HTMLElement>('.settings-nav-item'));
-            const current = items.findIndex(b => b.classList.contains('active'));
+            const current = items.findIndex((b) => b.classList.contains('active'));
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 items[(current + 1) % items.length]?.click();
@@ -611,7 +517,7 @@ export class Settings {
                 items[(current - 1 + items.length) % items.length]?.click();
             }
         });
-        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach(btn => {
+        document.querySelectorAll<HTMLElement>('.settings-nav-item').forEach((btn) => {
             if (!btn.getAttribute('tabindex')) btn.setAttribute('tabindex', '0');
         });
     }

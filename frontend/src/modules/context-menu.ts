@@ -21,7 +21,13 @@ export class ContextMenu {
         return !this.menuEl.classList.contains('hidden');
     }
 
-    async show(x: number, y: number, resultId: string, resultTitle: string, fromKeyboard = false): Promise<void> {
+    async show(
+        x: number,
+        y: number,
+        resultId: string,
+        resultTitle: string,
+        fromKeyboard = false
+    ): Promise<void> {
         this.target = resultId;
         const actions = await GetContextActions(resultId);
         if (actions.length === 0) return;
@@ -56,15 +62,17 @@ export class ContextMenu {
                 break;
             case 'ArrowUp':
                 e.preventDefault();
-                this.selectedIndex = (this.selectedIndex - 1 + this.actions.length) % this.actions.length;
+                this.selectedIndex =
+                    (this.selectedIndex - 1 + this.actions.length) % this.actions.length;
                 this._updateSelection();
                 break;
             case 'Enter':
                 e.preventDefault();
                 if (this.selectedIndex >= 0 && this.target) {
                     const action = this.actions[this.selectedIndex];
-                    ExecuteContextAction(this.target, action.id).then(response => {
-                        const title = this.menuEl.querySelector('.context-menu-header')?.textContent ?? '';
+                    ExecuteContextAction(this.target, action.id).then((response) => {
+                        const title =
+                            this.menuEl.querySelector('.context-menu-header')?.textContent ?? '';
                         this.hide();
                         this.onAction(action.id, response, title);
                     });
@@ -98,7 +106,7 @@ export class ContextMenu {
         this.menuEl.innerHTML = html;
         this.menuEl.classList.remove('hidden');
 
-        this.menuEl.querySelectorAll<HTMLElement>('.context-action').forEach(btn => {
+        this.menuEl.querySelectorAll<HTMLElement>('.context-action').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 const actionId = btn.dataset['action'];
                 if (!actionId || !this.target) return;

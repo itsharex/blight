@@ -63,7 +63,7 @@ export class SystemNotifications {
             this.resultsContainer.insertBefore(section, this.resultsContainer.firstChild);
         }
 
-        this.resultsContainer.querySelectorAll<HTMLElement>('[data-notif-id]').forEach(el => {
+        this.resultsContainer.querySelectorAll<HTMLElement>('[data-notif-id]').forEach((el) => {
             const notif = this.notifs.get(el.dataset['notifId']!);
             if (notif?.action) el.addEventListener('click', notif.action, { once: true });
         });

@@ -7,7 +7,83 @@ on:
     branches: [master, dev]
 
 jobs:
+  # ── Lint & Test (Linux only — fast, no GUI needed) ──────────────────────────
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install Linux build dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libgtk-3-dev libayatana-appindicator3-dev libx11-dev libwebkit2gtk-4.1-dev
+          version: 1.0
+
+      - name: Set up webkit2gtk-4.0 pkg-config shim
+        run: |
+          if ! pkg-config --exists webkit2gtk-4.0 && pkg-config --exists webkit2gtk-4.1; then
+            mkdir -p "$HOME/.pkgconfig"
+            printf 'Name: webkit2gtk-4.0\nDescription: Compatibility shim for webkit2gtk-4.1\nVersion: 4.0\nRequires: webkit2gtk-4.1\n' > "$HOME/.pkgconfig/webkit2gtk-4.0.pc"
+            printf 'Name: javascriptcoregtk-4.0\nDescription: Compatibility shim for javascriptcoregtk-4.1\nVersion: 4.0\nRequires: javascriptcoregtk-4.1\n' > "$HOME/.pkgconfig/javascriptcoregtk-4.0.pc"
+            echo "PKG_CONFIG_PATH=$HOME/.pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install
+
+      # Build frontend first — main.go embeds frontend/dist via //go:embed,
+      # so go vet and go test fail without it.
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
+
+      # ── Go ──────────────────────────────────────────────────────────────────
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go tests
+        run: go test ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+      # ── Frontend ────────────────────────────────────────────────────────────
+      - name: Frontend lint
+        working-directory: frontend
+        run: pnpm lint
+
+      - name: Frontend format check
+        working-directory: frontend
+        run: pnpm format:check
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: pnpm test
+
+  # ── Cross-platform build ─────────────────────────────────────────────────
   build:
+    needs: lint-and-test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

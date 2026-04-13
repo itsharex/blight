@@ -15,9 +15,11 @@ export function highlightMatch(text: string, query: string): string {
 
     const idx = lowerText.indexOf(lowerQuery);
     if (idx !== -1) {
-        return escapeHtml(text.slice(0, idx)) +
-               `<span class="match-chars">${escapeHtml(text.slice(idx, idx + lowerQuery.length))}</span>` +
-               escapeHtml(text.slice(idx + lowerQuery.length));
+        return (
+            escapeHtml(text.slice(0, idx)) +
+            `<span class="match-chars">${escapeHtml(text.slice(idx, idx + lowerQuery.length))}</span>` +
+            escapeHtml(text.slice(idx + lowerQuery.length))
+        );
     }
 
     let result = '';

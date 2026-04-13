@@ -1,7 +1,16 @@
 import {
-    IsFirstRun, IsSettingsMode, Search, Execute, HideWindow,
-    ExecuteContextAction, CheckForUpdates, InstallUpdate,
-    GetIcon, GetConfig, GetVersion, GetUsageScores,
+    IsFirstRun,
+    IsSettingsMode,
+    Search,
+    Execute,
+    HideWindow,
+    ExecuteContextAction,
+    CheckForUpdates,
+    InstallUpdate,
+    GetIcon,
+    GetConfig,
+    GetVersion,
+    GetUsageScores,
 } from '../wailsjs/go/main/App';
 import {
     provideFluentDesignSystem,
@@ -102,7 +111,9 @@ class Blight {
             onClose: () => this.searchInput.focus(),
             settingsMode: false, // updated after init
             getLastUpdateCheck: () => this.lastUpdateCheck,
-            setLastUpdateCheck: (t) => { this.lastUpdateCheck = t; },
+            setLastUpdateCheck: (t) => {
+                this.lastUpdateCheck = t;
+            },
             onUpdateAvailable: (update) => this.showUpdateUI(update),
         });
 
@@ -123,14 +134,17 @@ class Blight {
                     this.renderResults();
                 } else {
                     // No query — show only the active badge or hide
-                    filter ? this.filterPills.renderActiveOnly() : this.filterPills.hide();
+                    if (filter) {
+                        this.filterPills.renderActiveOnly();
+                    } else {
+                        this.filterPills.hide();
+                    }
                 }
             }
         );
 
-        this.systemNotifs = new SystemNotifications(
-            this.resultsContainer,
-            () => this.launcherEl.classList.contains('spotlight-mode')
+        this.systemNotifs = new SystemNotifications(this.resultsContainer, () =>
+            this.launcherEl.classList.contains('spotlight-mode')
         );
 
         this.init();
@@ -160,7 +174,7 @@ class Blight {
             fluentSwitch(),
             fluentSelect(),
             fluentOption(),
-            fluentTextField(),
+            fluentTextField()
         );
 
         const settingsMode = await IsSettingsMode();
@@ -239,7 +253,9 @@ class Blight {
                 this.settingsPanelEl.classList.remove('hidden');
 
                 const bar = document.getElementById('settings-update-progress-bar');
-                const fill = document.getElementById('settings-update-progress-fill') as HTMLElement | null;
+                const fill = document.getElementById(
+                    'settings-update-progress-fill'
+                ) as HTMLElement | null;
                 const text = document.getElementById('settings-update-progress-text');
                 if (bar) bar.style.display = 'block';
                 if (text) text.textContent = 'Downloading…';
@@ -293,7 +309,10 @@ class Blight {
 
         document.addEventListener('keydown', (e) => {
             if (this.settings.isOpen) {
-                if (e.key === 'Escape') { this.settings.close(); e.preventDefault(); }
+                if (e.key === 'Escape') {
+                    this.settings.close();
+                    e.preventDefault();
+                }
                 return;
             }
             if (this.contextMenu.isVisible) {
@@ -301,18 +320,31 @@ class Blight {
                 return;
             }
             switch (e.key) {
-                case 'ArrowDown': e.preventDefault(); this.moveSelection(1); break;
-                case 'ArrowUp':   e.preventDefault(); this.moveSelection(-1); break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.moveSelection(1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.moveSelection(-1);
+                    break;
                 case 'Enter':
                     e.preventDefault();
                     if (e.ctrlKey) this.executeSecondaryAction();
                     else this.executeSelected();
                     break;
-                case 'k': case 'K':
-                    if (e.ctrlKey) { e.preventDefault(); this.openActionPanelForSelected(); }
+                case 'k':
+                case 'K':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        this.openActionPanelForSelected();
+                    }
                     break;
                 case ',':
-                    if (e.ctrlKey) { e.preventDefault(); this.settings.open(); }
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        this.settings.open();
+                    }
                     break;
                 case 'Escape':
                     e.preventDefault();
@@ -334,12 +366,17 @@ class Blight {
         });
 
         document.addEventListener('click', (e) => {
-            if (e.target instanceof Node && !document.getElementById('context-menu')!.contains(e.target)) {
+            if (
+                e.target instanceof Node &&
+                !document.getElementById('context-menu')!.contains(e.target)
+            ) {
                 this.contextMenu.hide();
             }
         });
 
-        document.getElementById('settings-open-btn')?.addEventListener('click', () => this.settings.open());
+        document
+            .getElementById('settings-open-btn')
+            ?.addEventListener('click', () => this.settings.open());
 
         this.lastShownAt = Date.now();
         this.isHiding = false;
@@ -453,7 +490,9 @@ class Blight {
         }
 
         const filtered = this.activeFilter
-            ? this.results.filter(r => r.category.toLowerCase() === this.activeFilter!.toLowerCase())
+            ? this.results.filter(
+                  (r) => r.category.toLowerCase() === this.activeFilter!.toLowerCase()
+              )
             : this.results;
 
         if (filtered.length === 0 && this.activeFilter) {
@@ -479,7 +518,8 @@ class Blight {
 
             const selected = index === this.selectedIndex ? 'selected' : '';
             const cachedIcon = result.path ? this.iconCache.get(result.path) : null;
-            const iconSrc = (result.icon && result.icon.startsWith('data:')) ? result.icon : cachedIcon;
+            const iconSrc =
+                result.icon && result.icon.startsWith('data:') ? result.icon : cachedIcon;
             const iconHtml = iconSrc
                 ? `<div class="result-icon"><img src="${iconSrc}" alt=""/></div>`
                 : `<div class="result-icon result-icon-fallback" data-icon-index="${index}">${getFallbackIcon(result.category)}</div>`;
@@ -487,13 +527,15 @@ class Blight {
             const titleHtml = highlightMatch(result.title, this.currentQuery);
 
             const freq = this.usageScores.get(result.id) ?? 0;
-            const freqDot = freq > 0
-                ? `<div class="result-freq-dot ${freq > 300 ? 'freq-high' : freq > 100 ? 'freq-med' : 'freq-low'}" title="Used frequently"></div>`
-                : '';
+            const freqDot =
+                freq > 0
+                    ? `<div class="result-freq-dot ${freq > 300 ? 'freq-high' : freq > 100 ? 'freq-med' : 'freq-low'}" title="Used frequently"></div>`
+                    : '';
 
-            const pinBadge = result.category === 'Pinned'
-                ? `<span class="result-pin-badge" title="Pinned">📌</span>`
-                : '';
+            const pinBadge =
+                result.category === 'Pinned'
+                    ? `<span class="result-pin-badge" title="Pinned">📌</span>`
+                    : '';
 
             html += `
                 <div class="result-item ${selected}" data-index="${index}" data-id="${result.id}" role="option" aria-selected="${index === this.selectedIndex}">
@@ -510,35 +552,48 @@ class Blight {
 
         this.resultsContainer.innerHTML = html;
 
-        this.resultsContainer.querySelectorAll<HTMLElement>('.result-item').forEach(item => {
+        this.resultsContainer.querySelectorAll<HTMLElement>('.result-item').forEach((item) => {
             item.addEventListener('click', () => {
                 this.selectedIndex = parseInt(item.dataset['index'] ?? '0', 10);
                 this.executeSelected();
             });
             item.addEventListener('mouseenter', () => {
-                this.resultsContainer.querySelector('.result-item.selected')?.classList.remove('selected');
+                this.resultsContainer
+                    .querySelector('.result-item.selected')
+                    ?.classList.remove('selected');
                 item.classList.add('selected');
                 this.selectedIndex = parseInt(item.dataset['index'] ?? '0', 10);
                 this.updateFooterHints(displayResults[this.selectedIndex] ?? null);
             });
             item.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                this.resultsContainer.querySelector('.result-item.selected')?.classList.remove('selected');
+                this.resultsContainer
+                    .querySelector('.result-item.selected')
+                    ?.classList.remove('selected');
                 item.classList.add('selected');
                 this.selectedIndex = parseInt(item.dataset['index'] ?? '0', 10);
-                this.contextMenu.show(e.clientX, e.clientY, item.dataset['id'] ?? '', item.querySelector('.result-title')?.textContent ?? '', false);
+                this.contextMenu.show(
+                    e.clientX,
+                    e.clientY,
+                    item.dataset['id'] ?? '',
+                    item.querySelector('.result-title')?.textContent ?? '',
+                    false
+                );
             });
         });
 
         displayResults.forEach((result, index) => {
             if (!result.path || this.iconCache.has(result.path)) return;
             if (result.icon && result.icon.startsWith('data:')) return;
-            GetIcon(result.path).then(icon => {
-                if (!icon || this.renderSeq !== renderSeq) return;
-                this.iconCache.set(result.path, icon);
-                const el = this.resultsContainer.querySelector(`[data-icon-index="${index}"]`);
-                if (el) el.outerHTML = `<div class="result-icon"><img src="${icon}" alt=""/></div>`;
-            }).catch(() => {});
+            GetIcon(result.path)
+                .then((icon) => {
+                    if (!icon || this.renderSeq !== renderSeq) return;
+                    this.iconCache.set(result.path, icon);
+                    const el = this.resultsContainer.querySelector(`[data-icon-index="${index}"]`);
+                    if (el)
+                        el.outerHTML = `<div class="result-icon"><img src="${icon}" alt=""/></div>`;
+                })
+                .catch(() => {});
         });
 
         this._displayResults = displayResults;
@@ -654,7 +709,12 @@ class Blight {
         if (resultId.startsWith('dir-open:')) return 'terminal';
         if (resultId.startsWith('file-open:')) return 'explorer';
         if (resultId.startsWith('clip-')) return 'copy';
-        if (resultId.startsWith('sys-') || resultId.startsWith('web-search:') || resultId === 'calc-result') return null;
+        if (
+            resultId.startsWith('sys-') ||
+            resultId.startsWith('web-search:') ||
+            resultId === 'calc-result'
+        )
+            return null;
         return 'admin';
     }
 
@@ -669,9 +729,15 @@ class Blight {
 
     handleContextResponse(actionId: string, response: string, title: string): void {
         switch (actionId) {
-            case 'copy-path': this.showToast('Path copied', title, 'success'); break;
-            case 'copy-name': this.showToast('Name copied', title, 'success'); break;
-            case 'copy':      this.showToast('Copied to clipboard', title, 'success'); break;
+            case 'copy-path':
+                this.showToast('Path copied', title, 'success');
+                break;
+            case 'copy-name':
+                this.showToast('Name copied', title, 'success');
+                break;
+            case 'copy':
+                this.showToast('Copied to clipboard', title, 'success');
+                break;
             case 'delete':
                 this.showToast('Deleted', title, 'info');
                 this.loadDefaultResults();
@@ -685,7 +751,12 @@ class Blight {
                 if (response === 'ok') this.showToast('Launched', title, 'success');
                 break;
             case 'pin':
-                if (response === 'pinned') this.showToast(`Pinned "${title}"`, 'Will appear at top of launcher', 'success');
+                if (response === 'pinned')
+                    this.showToast(
+                        `Pinned "${title}"`,
+                        'Will appear at top of launcher',
+                        'success'
+                    );
                 else this.showToast(`Unpinned "${title}"`, '', 'info');
                 break;
             case 'delete-alias':
@@ -699,7 +770,10 @@ class Blight {
     updateFooterHints(result: main.SearchResult | null): void {
         const secondaryHint = document.getElementById('footer-hint-secondary');
         if (!secondaryHint) return;
-        if (!result) { secondaryHint.classList.add('hidden'); return; }
+        if (!result) {
+            secondaryHint.classList.add('hidden');
+            return;
+        }
         const secondaryLabel = this.getSecondaryActionLabel(result.id);
         const hasSecondary = this.getSecondaryActionId(result.id) !== null;
         if (hasSecondary) {
@@ -721,8 +795,15 @@ class Blight {
     listenIndexStatus(): void {
         EventsOn('indexStatus', (status: files.IndexStatus) => {
             if (status.state === 'indexing') {
-                const sub = status.count > 0 ? `${status.count.toLocaleString()} files scanned` : status.message;
-                this.systemNotifs.set('indexing', { icon: '⏳', title: 'Indexing files…', subtitle: sub });
+                const sub =
+                    status.count > 0
+                        ? `${status.count.toLocaleString()} files scanned`
+                        : status.message;
+                this.systemNotifs.set('indexing', {
+                    icon: '⏳',
+                    title: 'Indexing files…',
+                    subtitle: sub,
+                });
             } else {
                 this.systemNotifs.delete('indexing');
             }
@@ -736,7 +817,9 @@ class Blight {
         try {
             const scores = await GetUsageScores();
             this.usageScores = new Map(Object.entries(scores));
-        } catch (_) { /* non-critical */ }
+        } catch {
+            /* non-critical */
+        }
     }
 
     // --- What's New ---
@@ -749,7 +832,9 @@ class Blight {
             }
             localStorage.setItem('blight-last-version', version);
             this.lastKnownVersion = version;
-        } catch (_) { /* non-critical */ }
+        } catch {
+            /* non-critical */
+        }
     }
 
     private _showWhatsNewBadge(version: string): void {
@@ -758,7 +843,7 @@ class Blight {
         const badge = document.createElement('span');
         badge.id = 'whats-new-badge';
         badge.textContent = `New in ${version}`;
-        badge.title = 'blight was updated — click to see what\'s new';
+        badge.title = "blight was updated — click to see what's new";
         badge.addEventListener('click', () => {
             this.settings.activateTab('updates');
             this.settings.open();
