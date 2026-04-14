@@ -1324,11 +1324,11 @@ kbd {
     justify-content: center;
     gap: 5px;
     margin-left: auto;
-    padding: 5px 8px;
+    padding: 4px 10px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--bg-secondary);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     text-decoration: none;
     transition: color var(--transition-fast), background var(--transition-fast);
 }
