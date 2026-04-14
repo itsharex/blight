@@ -11,7 +11,7 @@ export function ClearIndex():Promise<void>;
 
 export function CloseSettings():Promise<void>;
 
-export function CompleteOnboarding(arg1:string):Promise<void>;
+export function CompleteOnboarding(arg1:string, arg2:string, arg3:boolean):Promise<void>;
 
 export function DeleteAlias(arg1:string):Promise<void>;
 

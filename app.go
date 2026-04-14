@@ -422,11 +422,15 @@ func (a *App) IsFirstRun() bool {
 	return a.config.FirstRun
 }
 
-func (a *App) CompleteOnboarding(hotkey string) error {
+func (a *App) CompleteOnboarding(hotkey, theme string, useAnimation bool) error {
 	a.config.FirstRun = false
 	if hotkey != "" {
 		a.config.Hotkey = hotkey
 	}
+	if theme != "" {
+		a.config.Theme = theme
+	}
+	a.config.UseAnimation = useAnimation
 	return a.saveConfig()
 }
 

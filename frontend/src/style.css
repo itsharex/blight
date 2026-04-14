@@ -600,6 +600,9 @@ kbd {
 
 .splash-logo, .splash-content { text-align: center; max-width: 380px; }
 
+/* Setup slides need a wider container and left-aligned text */
+.splash-setup-content { max-width: 460px; width: 100%; text-align: left; }
+
 .logo-icon {
     margin-bottom: 20px;
     animation: logoPulse 2.5s ease-in-out infinite alternate;
@@ -726,9 +729,19 @@ kbd {
     align-items: center;
     justify-content: space-between;
     padding-top: 14px;
+    gap: 8px;
 }
 
-.splash-btn-skip, .splash-btn-next {
+.splash-nav-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+/* Back / generic text nav button */
+.splash-btn-skip {
     font-family: var(--font);
     font-size: 12px;
     font-weight: 500;
@@ -738,12 +751,33 @@ kbd {
     padding: 5px 10px;
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    min-width: 68px;
 }
-
-.splash-btn-skip { color: var(--text-tertiary); }
 .splash-btn-skip:hover { color: var(--text-secondary); background: var(--bg-hover); }
-.splash-btn-next { color: var(--accent); }
-.splash-btn-next:hover { background: var(--accent-soft); }
+
+/* Small "Skip setup" link below dots */
+.splash-skip-text {
+    font-family: var(--font);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast);
+}
+.splash-skip-text:hover { color: var(--text-secondary); }
+
+/* Next button is now a fluent-button — size it consistently */
+#splash-next::part(control) {
+    font-size: 12px;
+    padding: 4px 14px;
+    min-height: 28px;
+    white-space: nowrap;
+}
 
 .splash-dots { display: flex; gap: 6px; }
 
@@ -752,12 +786,296 @@ kbd {
     height: 6px;
     border-radius: 50%;
     background: var(--bg-tertiary);
+    cursor: pointer;
     transition: all var(--transition-normal);
 }
+.splash-dot:hover { background: var(--text-tertiary); }
 
 .splash-dot.active {
     background: var(--accent);
     transform: scale(1.3);
+}
+
+/* === Setup slides: shared layout === */
+
+.splash-setup-content p {
+    text-align: left;
+}
+
+.splash-slide-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.splash-slide-header h2 { margin: 0; }
+
+.splash-slide-header-center {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.splash-slide-icon {
+    font-size: 22px;
+    color: var(--accent);
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+}
+
+/* win-icon variant */
+.splash-slide-icon.win-icon { width: auto; height: auto; line-height: 1; }
+
+/* === Theme cards === */
+
+.theme-cards {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 16px;
+    width: 100%;
+}
+
+.theme-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 8px 8px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background: none;
+    font-family: var(--font);
+    color: var(--text-secondary);
+    transition: border-color var(--transition-normal), background var(--transition-normal),
+        color var(--transition-normal);
+    position: relative;
+}
+
+.theme-card:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-hover);
+}
+
+.theme-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--text-primary);
+}
+
+.theme-card-preview {
+    width: 80px;
+    height: 48px;
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    gap: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.theme-preview-dark { background: #1c1c1e; }
+
+.theme-preview-light { background: #f0f0f2; }
+
+/* System: left half dark, right half light */
+.theme-preview-system {
+    background: #1c1c1e;
+    flex-direction: row;
+    padding: 0;
+    gap: 0;
+}
+.tpv-system-left, .tpv-system-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 5px 3px;
+    gap: 3px;
+}
+.tpv-system-right { background: #f0f0f2; }
+
+/* Mini rows inside the preview */
+.tpv-bar {
+    height: 7px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.10);
+    flex-shrink: 0;
+}
+.theme-preview-light .tpv-bar,
+.tpv-system-right .tpv-bar { background: rgba(0, 0, 0, 0.10); }
+
+.tpv-row {
+    height: 4px;
+    border-radius: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+.theme-preview-light .tpv-row,
+.tpv-system-right .tpv-row { background: rgba(0, 0, 0, 0.07); }
+
+.tpv-row-accent { background: rgba(92, 154, 255, 0.45) !important; }
+.tpv-row-accent-light { background: rgba(92, 154, 255, 0.35) !important; }
+.tpv-row-dim { background: rgba(255, 255, 255, 0.03) !important; }
+.theme-preview-light .tpv-row-dim { background: rgba(0, 0, 0, 0.04) !important; }
+
+.theme-card-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+/* Check icon — only visible when card is selected */
+.theme-card-check {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    font-size: 10px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    line-height: 1;
+}
+.theme-card-check-svg {
+    width: 12px;
+    height: 12px;
+    stroke: var(--accent);
+}
+.theme-card.selected .theme-card-check { opacity: 1; }
+
+/* Only show the correct check variant per OS */
+[data-os="windows"] .theme-card-check-svg { display: none; }
+:not([data-os="windows"]) .theme-card-check.win-icon { display: none; }
+
+/* === Animation preference row === */
+
+.splash-pref-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    gap: 12px;
+}
+
+.splash-pref-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.splash-pref-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.splash-pref-desc {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+/* === Hotkey recorder (embedded in splash) === */
+
+.splash-hk-canvas {
+    width: 100%;
+    margin: 14px 0 8px;
+}
+
+.splash-hk-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.splash-link-btn {
+    font-family: var(--font);
+    font-size: 11px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+    white-space: nowrap;
+}
+.splash-link-btn:hover { background: var(--accent-soft); }
+
+/* === Ready slide === */
+
+.splash-ready-icon {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: readyPop 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes readyPop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Show the right ready icon variant per OS */
+[data-os="windows"] .splash-ready-icon > svg { display: none; }
+:not([data-os="windows"]) .splash-ready-icon > .win-icon { display: none; }
+
+.splash-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px auto 20px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    text-align: left;
+    width: 100%;
+    max-width: 340px;
+}
+
+.splash-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.splash-summary-row strong { color: var(--text-primary); font-weight: 600; }
+
+.splash-summary-icon {
+    font-size: 14px;
+    color: var(--accent);
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    line-height: 1;
+}
+.splash-summary-icon.win-icon { width: auto; }
+
+[data-os="windows"] .splash-summary-icon:not(.win-icon) { display: none; }
+:not([data-os="windows"]) .splash-summary-icon.win-icon { display: none; }
+
+.splash-go-row {
+    display: flex;
+    justify-content: center;
+}
+
+#splash-go::part(control) {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 24px;
+    min-height: 34px;
 }
 
 /* === Footer Settings Button === */

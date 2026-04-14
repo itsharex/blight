@@ -18,8 +18,8 @@ export function CloseSettings() {
   return window['go']['main']['App']['CloseSettings']();
 }
 
-export function CompleteOnboarding(arg1) {
-  return window['go']['main']['App']['CompleteOnboarding'](arg1);
+export function CompleteOnboarding(arg1, arg2, arg3) {
+  return window['go']['main']['App']['CompleteOnboarding'](arg1, arg2, arg3);
 }
 
 export function DeleteAlias(arg1) {

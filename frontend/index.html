@@ -11,118 +11,184 @@
     <div id="splash" class="splash hidden">
       <div class="splash-container">
         <div class="splash-slides">
+
           <!-- Slide 1: Welcome -->
           <div class="splash-slide active" data-slide="0">
             <div class="splash-logo">
               <div class="logo-icon">
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
                   <defs>
-                    <linearGradient
-                      id="logo-grad"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
+                    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" style="stop-color: #4a9eff" />
                       <stop offset="100%" style="stop-color: #7c3aed" />
                     </linearGradient>
                   </defs>
-                  <rect
-                    x="4"
-                    y="4"
-                    width="56"
-                    height="56"
-                    rx="14"
-                    fill="url(#logo-grad)"
-                  />
-                  <text
-                    x="32"
-                    y="44"
-                    text-anchor="middle"
-                    fill="white"
-                    font-size="32"
-                    font-weight="700"
-                    font-family="Inter, system-ui, sans-serif"
-                  >
-                    B
-                  </text>
+                  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#logo-grad)" />
+                  <text x="32" y="44" text-anchor="middle" fill="white" font-size="32"
+                    font-weight="700" font-family="Inter, system-ui, sans-serif">B</text>
                 </svg>
               </div>
-              <h1 class="splash-title">
-                Welcome to <span class="brand">blight</span>
-              </h1>
+              <h1 class="splash-title">Welcome to <span class="brand">blight</span></h1>
               <p class="splash-desc">
-                A blazing-fast launcher at your fingertips.<br />Search apps,
-                run commands, and more — all from your keyboard.
+                A blazing-fast launcher at your fingertips.<br />
+                Let's take 30 seconds to set it up just the way you like.
               </p>
             </div>
           </div>
 
-          <!-- Slide 2: Hotkey -->
+          <!-- Slide 2: Theme & Animations -->
           <div class="splash-slide" data-slide="1">
-            <div class="splash-content">
-              <div class="splash-icon-large">⌨️</div>
-              <h2>Your Launch Shortcut</h2>
-              <p>Press this hotkey anywhere to summon blight instantly.</p>
-              <div class="hotkey-display">
-                <kbd>Alt</kbd> <span class="hotkey-plus">+</span>
-                <kbd>Space</kbd>
+            <div class="splash-content splash-setup-content">
+              <div class="splash-slide-header">
+                <span class="win-icon splash-slide-icon">&#xE771;</span>
+                <svg class="splash-slide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <h2>Choose Your Look</h2>
               </div>
-              <p class="splash-hint">You can change this later in settings.</p>
+              <p>Pick a theme — applies live as you click.</p>
+              <div class="theme-cards">
+                <button class="theme-card selected" data-theme-card="dark">
+                  <div class="theme-card-preview theme-preview-dark">
+                    <div class="tpv-bar"></div>
+                    <div class="tpv-row tpv-row-accent"></div>
+                    <div class="tpv-row"></div>
+                    <div class="tpv-row tpv-row-dim"></div>
+                  </div>
+                  <span class="theme-card-label">Dark</span>
+                  <span class="theme-card-check win-icon">&#xE73E;</span>
+                  <svg class="theme-card-check theme-card-check-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3,8 6.5,11.5 13,5"/>
+                  </svg>
+                </button>
+                <button class="theme-card" data-theme-card="light">
+                  <div class="theme-card-preview theme-preview-light">
+                    <div class="tpv-bar"></div>
+                    <div class="tpv-row tpv-row-accent"></div>
+                    <div class="tpv-row"></div>
+                    <div class="tpv-row tpv-row-dim"></div>
+                  </div>
+                  <span class="theme-card-label">Light</span>
+                  <span class="theme-card-check win-icon">&#xE73E;</span>
+                  <svg class="theme-card-check theme-card-check-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3,8 6.5,11.5 13,5"/>
+                  </svg>
+                </button>
+                <button class="theme-card" data-theme-card="system">
+                  <div class="theme-card-preview theme-preview-system">
+                    <div class="tpv-system-left">
+                      <div class="tpv-bar"></div>
+                      <div class="tpv-row tpv-row-accent"></div>
+                    </div>
+                    <div class="tpv-system-right">
+                      <div class="tpv-bar"></div>
+                      <div class="tpv-row tpv-row-accent-light"></div>
+                    </div>
+                  </div>
+                  <span class="theme-card-label">System</span>
+                  <span class="theme-card-check win-icon">&#xE73E;</span>
+                  <svg class="theme-card-check theme-card-check-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3,8 6.5,11.5 13,5"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="splash-pref-row">
+                <div class="splash-pref-info">
+                  <span class="splash-pref-label">Enable Animations</span>
+                  <span class="splash-pref-desc">Smooth transitions and scale effects</span>
+                </div>
+                <fluent-switch id="splash-anim-switch" checked></fluent-switch>
+              </div>
             </div>
           </div>
 
-          <!-- Slide 3: Quick Tour -->
+          <!-- Slide 3: Hotkey -->
           <div class="splash-slide" data-slide="2">
+            <div class="splash-content splash-setup-content">
+              <div class="splash-slide-header">
+                <span class="win-icon splash-slide-icon">&#xE92E;</span>
+                <svg class="splash-slide-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="13" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+                </svg>
+                <h2>Launch Hotkey</h2>
+              </div>
+              <p>Press any key combo to set your global shortcut.</p>
+              <div id="splash-hk-canvas" class="hotkey-canvas splash-hk-canvas hk-active" tabindex="0">
+                <span class="hotkey-placeholder" id="splash-hk-placeholder">Press a key combination…</span>
+                <div class="hotkey-chips-row" id="splash-hk-chips-row"></div>
+              </div>
+              <div class="splash-hk-hint-row">
+                <span class="splash-hint">Needs at least one modifier: Ctrl, Alt, Shift, or Win</span>
+                <button id="splash-hk-reset" class="splash-link-btn">Reset to Alt+Space</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 4: Quick Tour -->
+          <div class="splash-slide" data-slide="3">
             <div class="splash-content">
-              <div class="splash-icon-large">🚀</div>
-              <h2>How It Works</h2>
+              <div class="splash-slide-header splash-slide-header-center">
+                <span class="splash-icon-large">🚀</span>
+                <h2>How It Works</h2>
+              </div>
               <div class="tour-steps">
                 <div class="tour-step">
                   <div class="tour-num">1</div>
-                  <div>
-                    <strong>Type</strong> to search apps, files, and commands
-                  </div>
+                  <div><strong>Type</strong> to search apps, files, and commands</div>
                 </div>
                 <div class="tour-step">
                   <div class="tour-num">2</div>
-                  <div>
-                    <strong>Navigate</strong> with <kbd>↑</kbd>
-                    <kbd>↓</kbd> arrow keys
-                  </div>
+                  <div><strong>Navigate</strong> with <kbd>↑</kbd> <kbd>↓</kbd> arrow keys</div>
                 </div>
                 <div class="tour-step">
                   <div class="tour-num">3</div>
                   <div><strong>Execute</strong> with <kbd>Enter</kbd></div>
                 </div>
+                <div class="tour-step">
+                  <div class="tour-num">4</div>
+                  <div><strong>Right-click</strong> or <kbd>Ctrl+K</kbd> for more actions</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Slide 4: Ready -->
-          <div class="splash-slide" data-slide="3">
+          <!-- Slide 5: Ready -->
+          <div class="splash-slide" data-slide="4">
             <div class="splash-content">
-              <div class="splash-icon-large">✨</div>
-              <h2>You're All Set</h2>
-              <p>blight is ready to make your workflow faster.</p>
-              <button id="splash-go" class="splash-btn-primary">
-                Let's Go
-              </button>
+              <div class="splash-ready-icon">
+                <span class="win-icon" style="font-size:44px;color:var(--accent)">&#xE73E;</span>
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="44" height="44" style="color:var(--accent)">
+                  <circle cx="24" cy="24" r="20"/><polyline points="15,24 21,30 33,18"/>
+                </svg>
+              </div>
+              <h2>You're All Set!</h2>
+              <p>blight is configured and ready. Here's what you chose:</p>
+              <div class="splash-summary" id="splash-summary"></div>
+              <div class="splash-go-row">
+                <fluent-button id="splash-go" appearance="accent">
+                  Launch blight
+                  <span class="win-icon" style="font-size:11px;margin-left:6px">&#xE76C;</span>
+                </fluent-button>
+              </div>
             </div>
           </div>
+
         </div>
 
         <!-- Navigation -->
         <div class="splash-nav">
-          <button id="splash-skip" class="splash-btn-skip">Skip</button>
-          <div class="splash-dots">
-            <div class="splash-dot active" data-dot="0"></div>
-            <div class="splash-dot" data-dot="1"></div>
-            <div class="splash-dot" data-dot="2"></div>
-            <div class="splash-dot" data-dot="3"></div>
+          <button id="splash-back" class="splash-btn-skip splash-btn-back" style="visibility:hidden">← Back</button>
+          <div class="splash-nav-center">
+            <div class="splash-dots">
+              <div class="splash-dot active" data-dot="0"></div>
+              <div class="splash-dot" data-dot="1"></div>
+              <div class="splash-dot" data-dot="2"></div>
+              <div class="splash-dot" data-dot="3"></div>
+              <div class="splash-dot" data-dot="4"></div>
+            </div>
+            <button id="splash-skip" class="splash-skip-text">Skip setup</button>
           </div>
-          <button id="splash-next" class="splash-btn-next">Next →</button>
+          <fluent-button id="splash-next" appearance="accent" style="font-size:12px">Next →</fluent-button>
         </div>
       </div>
     </div>
