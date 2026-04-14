@@ -308,8 +308,7 @@ class Blight {
         const actions = document.querySelector<HTMLElement>('.footer-actions');
         if (!actions) return;
         const visible =
-            this.footerHintsMode === 'always' ||
-            (this.footerHintsMode === 'on-search' && inSearch);
+            this.footerHintsMode === 'always' || (this.footerHintsMode === 'on-search' && inSearch);
         actions.classList.toggle('footer-hints-hidden', !visible);
     }
 
